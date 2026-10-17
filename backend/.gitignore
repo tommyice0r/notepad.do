@@ -1,0 +1,10 @@
+# Sensitive credentials
+.env
+*.env
+.env.*
+!.env.example
+
+# Compiled binaries
+main
+main.exe
+*.exe

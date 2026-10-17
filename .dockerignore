@@ -1,0 +1,23 @@
+# Version control & environment secrets
+.git
+.gitignore
+.env
+*.env
+.env.*
+!.env.example
+
+# Dependencies and build outputs
+node_modules
+frontend/node_modules
+frontend/dist
+admin/node_modules
+admin/dist
+dist
+
+# Binaries and logs
+*.exe
+*.log
+.system_generated
+.gemini
+.DS_Store
+Thumbs.db

@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pf-bg: #060607;
+  --color-pf-panel: #141416;
+  --color-pf-soft: #1B1B1E;
+  --color-pf-well: #0E0E11;
+  --color-pf-code: #070708;
+  --color-pf-line: rgba(255, 255, 255, 0.08);
+  --color-pf-line-subtle: rgba(255, 255, 255, 0.04);
+  --color-pf-orange: #FF9F0A;
+  --color-pf-orange-deep: #FF7B00;
+  --color-pf-green: #30D158;
+}
+
+:root {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: dark;
+}
+
+body {
+  background-color: #060607;
+  background-image: radial-gradient(80% 60% at 50% 0%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 70%), #060607;
+  color: #EDEDED;
+  margin: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Monospace font for editor */
+.font-mono-code {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.font-manrope {
+  font-family: 'Manrope', sans-serif;
+}
+
+/* ProxiesFood Glass Panel */
+.pf-panel {
+  background: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 24px 48px -12px rgba(0, 0, 0, 0.8);
+  border-radius: 24px;
+}
+
+.pf-well {
+  background: #0E0E11;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+}
+
+/* ProxiesFood Gradient Button */
+.pf-btn-primary {
+  background: linear-gradient(135deg, #FF9F0A 0%, #FF7B00 100%);
+  color: #000000;
+  font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 24px rgba(255, 130, 0, 0.32);
+  border-radius: 11px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.pf-btn-primary:hover {
+  filter: brightness(1.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 10px 28px rgba(255, 130, 0, 0.42);
+}
+
+.pf-btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* ProxiesFood Secondary Chip Button */
+.pf-btn-secondary {
+  background: #1B1B1E;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #EDEDED;
+  font-weight: 700;
+  border-radius: 11px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pf-btn-secondary:hover {
+  background: #242428;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+/* Status Pills */
+.pf-pill {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pf-pill-ok {
+  background: rgba(48, 209, 88, 0.12);
+  color: #30D158;
+  border: 1px solid rgba(48, 209, 88, 0.25);
+}
+
+.pf-pill-warm {
+  background: rgba(255, 159, 10, 0.12);
+  color: #FF9F0A;
+  border: 1px solid rgba(255, 159, 10, 0.25);
+}
+
+/* Zero-Shift Highlighting for Editor Overlay (Pixel-Perfect Alignment) */
+.hl-card, .hl-pwd, .hl-user, .hl-url, .hl-proxy, .hl-crypto, .hl-key {
+  color: transparent !important;
+  font-weight: inherit !important;
+  font-family: inherit !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 4px;
+}
+
+.hl-pwd {
+  background-color: rgba(255, 69, 58, 0.25);
+  box-shadow: 0 0 0 2px rgba(255, 69, 58, 0.35);
+}
+
+.hl-card {
+  background-color: rgba(255, 159, 10, 0.25);
+  box-shadow: 0 0 0 2px rgba(255, 159, 10, 0.35);
+}
+
+.hl-user {
+  background-color: rgba(48, 209, 88, 0.22);
+  box-shadow: 0 0 0 2px rgba(48, 209, 88, 0.32);
+}
+
+.hl-url {
+  background-color: rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hl-proxy {
+  background-color: rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+}
+
+.hl-crypto {
+  background-color: rgba(234, 179, 8, 0.2);
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.3);
+}
+
+.hl-key {
+  background-color: rgba(255, 159, 10, 0.2);
+  box-shadow: 0 0 0 2px rgba(255, 159, 10, 0.3);
+}
+
+.editor-surface {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace !important;
+  line-height: 1.7 !important;
+  letter-spacing: 0px !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  tab-size: 2;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #25252A;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #36363E;
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(255, 159, 10, 0.35);
+  color: #FFFFFF;
+}

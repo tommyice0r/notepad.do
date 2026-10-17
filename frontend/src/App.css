@@ -1,0 +1,52 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #121212;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.ad-banner {
+  background-color: #1e1e1e;
+  color: #777;
+  text-align: center;
+  padding: 10px;
+  border: 1px dashed #444;
+}
+
+.top-ad {
+  min-height: 90px; /* Standard leaderboard ad height */
+  margin-bottom: 20px;
+}
+
+.bottom-ad {
+  min-height: 90px;
+  margin-top: 20px;
+}

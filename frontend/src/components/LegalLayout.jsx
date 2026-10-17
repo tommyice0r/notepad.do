@@ -1,0 +1,126 @@
+import { Link, useLocation } from "react-router-dom";
+import { FileEdit, Plus, ArrowLeft, Shield, FileText, HelpCircle, Mail, AlertTriangle, BookOpen } from "lucide-react";
+
+export default function LegalLayout({ title, subtitle, lastUpdated, children }) {
+  const location = useLocation();
+
+  const links = [
+    { to: "/acerca-de", label: "Acerca de nosotros", icon: BookOpen },
+    { to: "/faq", label: "Preguntas frecuentes", icon: HelpCircle },
+    { to: "/privacidad", label: "Política de privacidad", icon: Shield },
+    { to: "/terminos", label: "Términos del servicio", icon: FileText },
+    { to: "/cookies", label: "Política de cookies", icon: Shield },
+    { to: "/contacto", label: "Contacto y soporte", icon: Mail },
+    { to: "/reportar-abuso", label: "Reportar abuso / DMCA", icon: AlertTriangle },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#060607] text-[#EDEDED] font-manrope flex flex-col justify-between p-3 sm:p-5 md:p-8">
+      
+      {/* Top Header */}
+      <header className="w-full max-w-[1200px] mx-auto flex items-center justify-between py-4 border-b border-white/[0.08] mb-6">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-xl bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A] shadow-[0_4px_14px_rgba(255,159,10,0.2)]">
+            <FileEdit className="w-4 h-4" />
+          </div>
+          <span className="font-extrabold text-lg tracking-tight text-white group-hover:text-[#FF9F0A] transition-colors">
+            Notepad<span className="text-[#FF9F0A]">.do</span>
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-400 hover:text-white bg-[#141416] hover:bg-[#1B1B1E] border border-white/[0.08] transition-all"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Volver al inicio</span>
+          </Link>
+
+          <Link
+            to="/nueva"
+            className="pf-btn-primary flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Abrir bloc</span>
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="w-full max-w-[1200px] mx-auto flex-1 flex flex-col md:flex-row gap-6 mb-8">
+        
+        {/* Left Sidebar Navigation */}
+        <aside className="w-full md:w-[260px] shrink-0">
+          <div className="pf-panel p-3 sticky top-6">
+            <span className="px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block">
+              Documentación y Legal
+            </span>
+            <nav className="flex flex-col gap-1 mt-1">
+              {links.map((item) => {
+                const Icon = item.icon;
+                const active = location.pathname === item.to;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                      active
+                        ? "bg-[#FF9F0A]/15 text-[#FF9F0A] border border-[#FF9F0A]/30 shadow-sm"
+                        : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="mt-6 pt-4 border-t border-white/[0.06] px-3">
+              <span className="text-[11px] text-gray-500 block leading-relaxed">
+                Notepad.do cumple con las políticas de Google AdSense y normativas GDPR / CCPA.
+              </span>
+            </div>
+          </div>
+        </aside>
+
+        {/* Right Article Container */}
+        <article className="flex-1 pf-panel p-6 sm:p-10 text-sm leading-relaxed text-gray-300">
+          <header className="border-b border-white/[0.08] pb-6 mb-8">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-manrope">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+                {subtitle}
+              </p>
+            )}
+            {lastUpdated && (
+              <span className="inline-block mt-3 text-[11px] font-mono-code text-gray-500">
+                Última actualización: {lastUpdated}
+              </span>
+            )}
+          </header>
+
+          <div className="space-y-6 prose-invert">
+            {children}
+          </div>
+        </article>
+
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full max-w-[1200px] mx-auto pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-3">
+        <span>© 2026 Notepad.do — Todos los derechos reservados.</span>
+        <div className="flex items-center gap-4">
+          <Link to="/privacidad" className="hover:text-gray-300 transition-colors">Privacidad</Link>
+          <Link to="/terminos" className="hover:text-gray-300 transition-colors">Términos</Link>
+          <Link to="/cookies" className="hover:text-gray-300 transition-colors">Cookies</Link>
+          <Link to="/contacto" className="hover:text-gray-300 transition-colors">Contacto</Link>
+        </div>
+      </footer>
+
+    </div>
+  );
+}

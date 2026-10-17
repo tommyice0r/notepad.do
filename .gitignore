@@ -1,0 +1,28 @@
+# Environment files & secrets
+.env
+*.env
+.env.*
+!.env.example
+
+# Go binaries & build artifacts
+backend/main
+backend/main.exe
+backend/*.exe
+*.exe
+*.dll
+*.so
+
+# Node & Frontend dependencies & build outputs
+node_modules/
+frontend/node_modules/
+frontend/dist/
+admin/node_modules/
+admin/dist/
+dist/
+
+# Logs & internal runtime files
+*.log
+.system_generated/
+.gemini/
+.DS_Store
+Thumbs.db

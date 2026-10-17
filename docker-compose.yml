@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  # ----------------------------------------------------------------------------
+  # Backend API Service (Go Chi + GORM + PostgreSQL)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: notepad-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - DATABASE_URL=${DATABASE_URL}
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-TommyAdminSecret2026!}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - OXAPAY_MERCHANT_KEY=${OXAPAY_MERCHANT_KEY:-}
+      - OXAPAY_WEBHOOK_SECRET=${OXAPAY_WEBHOOK_SECRET:-}
+    networks:
+      - notepad-network
+
+  # ----------------------------------------------------------------------------
+  # Frontend Web Service (React + Vite + Nginx SPA)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-}
+    container_name: notepad-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-}
+    depends_on:
+      - backend
+    networks:
+      - notepad-network
+
+networks:
+  notepad-network:
+    driver: bridge
