@@ -1,11 +1,36 @@
 import axios from "axios";
 
-// Connect seamlessly to the same Go server whether hosted at :8080/admin/ or running in Vite dev mode
-export const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" && (window.location.port === "5173" || window.location.port === "5174")
-    ? "http://localhost:8080/api"
-    : "/api");
+/**
+ * Calculates and normalizes API_BASE for Admin Panel in Dokploy:
+ * 1. Checks runtime window.__APP_CONFIG__.VITE_API_URL
+ * 2. Checks build-time import.meta.env.VITE_API_URL
+ * 3. Normalizes trailing slashes and ensures /api prefix
+ * 4. Fallback for local development or same-host deployment
+ */
+export function getAdminApiBase() {
+  const runtimeUrl = typeof window !== "undefined" && window.__APP_CONFIG__?.VITE_API_URL;
+  const buildTimeUrl = import.meta.env.VITE_API_URL;
+  const raw = (runtimeUrl || buildTimeUrl || "").trim();
+
+  if (raw) {
+    let clean = raw.replace(/\/+$/, "");
+    if (!clean.endsWith("/api")) {
+      clean += "/api";
+    }
+    return clean;
+  }
+
+  if (
+    typeof window !== "undefined" &&
+    (window.location.port === "5173" || window.location.port === "5174")
+  ) {
+    return "http://localhost:8080/api";
+  }
+
+  return "/api";
+}
+
+export const API_BASE = getAdminApiBase();
 
 export const PUBLIC_SITE_ORIGIN =
   import.meta.env.VITE_PUBLIC_SITE_URL ||
@@ -15,7 +40,7 @@ export const PUBLIC_SITE_ORIGIN =
 
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 20000,
+  timeout: 25000,
 });
 
 export function getSavedAdminKey() {

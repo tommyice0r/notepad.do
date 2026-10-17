@@ -1,18 +1,47 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"notepad-do-backend/db"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+var safeDBName = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
+
+func createDBIfNotExists(dsn string) {
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		u, err := url.Parse(dsn)
+		if err != nil {
+			return
+		}
+		dbName := strings.TrimPrefix(u.Path, "/")
+		if dbName == "" || dbName == "postgres" || !safeDBName.MatchString(dbName) {
+			return
+		}
+		u.Path = "/postgres"
+		sqlDB, err := sql.Open("pgx", u.String())
+		if err != nil {
+			return
+		}
+		defer sqlDB.Close()
+		_, err = sqlDB.Exec(fmt.Sprintf(`CREATE DATABASE "%s"`, dbName))
+		if err == nil {
+			fmt.Printf("✨ Base de datos '%s' creada automáticamente.\n", dbName)
+		}
+	}
+}
 
 func main() {
 	_ = godotenv.Load()
@@ -31,6 +60,8 @@ func main() {
 	fmt.Println("==================================================")
 	fmt.Println("⚡ Conectando a la base de datos PostgreSQL...")
 	fmt.Println("==================================================")
+
+	createDBIfNotExists(dsn)
 
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

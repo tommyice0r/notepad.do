@@ -1,6 +1,6 @@
 module notepad-do-backend
 
-go 1.27.0
+go 1.26.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.13.0

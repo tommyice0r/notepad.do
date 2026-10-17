@@ -1,11 +1,16 @@
 package db
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
@@ -13,6 +18,30 @@ import (
 )
 
 var DB *gorm.DB
+
+var validDBNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
+
+func ensureDatabaseExists(dsn string) error {
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		u, err := url.Parse(dsn)
+		if err != nil {
+			return err
+		}
+		dbName := strings.TrimPrefix(u.Path, "/")
+		if dbName == "" || dbName == "postgres" || !validDBNameRegex.MatchString(dbName) {
+			return nil
+		}
+		u.Path = "/postgres"
+		sqlDB, err := sql.Open("pgx", u.String())
+		if err != nil {
+			return err
+		}
+		defer sqlDB.Close()
+		_, err = sqlDB.Exec(fmt.Sprintf(`CREATE DATABASE "%s"`, dbName))
+		return err
+	}
+	return nil
+}
 
 func Init() {
 	_ = godotenv.Load() // Loads .env file if it exists
@@ -24,6 +53,12 @@ func Init() {
 
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil && strings.Contains(err.Error(), "does not exist") {
+		log.Println("Target database does not exist yet, attempting to create it automatically...")
+		if createErr := ensureDatabaseExists(dsn); createErr == nil {
+			DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		}
+	}
 	if err != nil {
 		log.Fatal("Failed to connect to database. Make sure PostgreSQL is running.\nError: ", err)
 	}

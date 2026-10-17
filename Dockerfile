@@ -44,6 +44,7 @@ WORKDIR /app/backend
 
 RUN apk add --no-cache git ca-certificates tzdata
 
+ENV GOTOOLCHAIN=auto
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 

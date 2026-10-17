@@ -1021,7 +1021,7 @@ func main() {
 			admin.Post("/payments/{id}/approve", func(w http.ResponseWriter, r *http.Request) {
 				id := chi.URLParam(r, "id")
 				var payment db.Payment
-				if err := db.DB.Where("id = ? OR invoice_id = ?", id, id).First(&payment).Error; err != nil {
+				if err := db.DB.Where("id::text = ? OR invoice_id = ?", id, id).First(&payment).Error; err != nil {
 					jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Orden de pago no encontrada"})
 					return
 				}
@@ -1045,7 +1045,7 @@ func main() {
 
 			admin.Delete("/payments/{id}", func(w http.ResponseWriter, r *http.Request) {
 				id := chi.URLParam(r, "id")
-				db.DB.Where("id = ? OR invoice_id = ?", id, id).Delete(&db.Payment{})
+				db.DB.Where("id::text = ? OR invoice_id = ?", id, id).Delete(&db.Payment{})
 				jsonResponse(w, http.StatusOK, map[string]interface{}{"success": true})
 			})
 
@@ -1065,13 +1065,13 @@ func main() {
 					jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Solicitud no válida"})
 					return
 				}
-				db.DB.Model(&db.ContactMessage{}).Where("id = ?", id).Update("status", payload.Status)
+				db.DB.Model(&db.ContactMessage{}).Where("id::text = ?", id).Update("status", payload.Status)
 				jsonResponse(w, http.StatusOK, map[string]interface{}{"success": true})
 			})
 
 			admin.Delete("/messages/{id}", func(w http.ResponseWriter, r *http.Request) {
 				id := chi.URLParam(r, "id")
-				db.DB.Where("id = ?", id).Delete(&db.ContactMessage{})
+				db.DB.Where("id::text = ?", id).Delete(&db.ContactMessage{})
 				jsonResponse(w, http.StatusOK, map[string]interface{}{"success": true})
 			})
 
