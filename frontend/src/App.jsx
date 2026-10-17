@@ -83,7 +83,12 @@ function EditorPage() {
           <span>·</span>
           <Link to="/contacto" className="hover:text-gray-300 transition-colors">Contacto</Link>
           <span>·</span>
-          <Link to="/admin" className="hover:text-gray-300 transition-colors">Admin</Link>
+          <a
+            href={typeof window !== "undefined" && window.location.port === "5173" ? "http://localhost:8080/admin/" : "/admin/"}
+            className="hover:text-[#FF9F0A] transition-colors font-semibold"
+          >
+            Admin
+          </a>
         </div>
       </footer>
     </div>

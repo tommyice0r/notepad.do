@@ -179,11 +179,6 @@ func toAdminNoteItem(n db.Note) db.AdminNoteItem {
 }
 
 func resolveStaticDir(candidates ...string) string {
-	if envDir := os.Getenv("STATIC_DIR"); envDir != "" {
-		if info, err := os.Stat(envDir); err == nil && info.IsDir() {
-			return envDir
-		}
-	}
 	for _, c := range candidates {
 		if c == "" {
 			continue
