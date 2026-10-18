@@ -1300,6 +1300,9 @@ func main() {
 		if raw == "" {
 			raw = strings.TrimSpace(os.Getenv("VITE_ADSENSE_CLIENT_ID"))
 		}
+		if raw == "" {
+			raw = "ca-pub-9577407700651547"
+		}
 		if raw == "" || strings.Contains(raw, "0000000000000000") {
 			return ""
 		}

@@ -74,14 +74,18 @@ async function runPrerender() {
   const templatePath = path.join(distDir, "index.html");
   const template = fs.readFileSync(templatePath, "utf-8");
 
-  // 1. Generate dist/note.html as the SPA shell for dynamic user notes (/:slug) with noindex, nofollow and NO canonical
-  const noteShellHtml = injectHeadMeta(template, {
+  // 1. Generate dist/note.html as the SPA shell for dynamic user notes (/:slug) with noindex, nofollow, NO canonical, and NO AdSense script
+  let noteShellHtml = injectHeadMeta(template, {
     title: "Nota privada en la nube — Notepad.do",
     description:
       "Espacio de trabajo y bloc de notas privado sincronizado en la nube con Notepad.do.",
     canonical: null,
     robots: "noindex, nofollow",
   });
+  noteShellHtml = noteShellHtml.replace(
+    /\s*<script[^>]*pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js[^>]*><\/script>/gi,
+    ""
+  );
   fs.writeFileSync(path.join(distDir, "note.html"), noteShellHtml, "utf-8");
 
   // 2. Import SSR bundle and prerender all static publisher routes

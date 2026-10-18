@@ -1,5 +1,1 @@
-# Google AdSense ads.txt — Notepad.do
-# Nota: Si configuras tu ID de Editor (ca-pub-XXXXXXXXXXXXXXXX) desde el Panel de Administración (/admin/),
-# el servidor generará automáticamente la línea autorizada de ads.txt.
-# Si usas contenedor estático Nginx, descomenta la siguiente línea y reemplaza pub-0000000000000000 por tu ID real:
-# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+google.com, pub-9577407700651547, DIRECT, f08c47fec0942fa0

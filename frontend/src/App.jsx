@@ -342,7 +342,7 @@ function AdminPage() {
 export function AppContent() {
   const [appConfig, setAppConfig] = useState({
     adsense_enabled: true,
-    adsense_client_id: "",
+    adsense_client_id: "ca-pub-9577407700651547",
     adsense_slot_top: "",
     adsense_slot_bottom: "",
     adsense_auto_ads: true,
@@ -363,7 +363,12 @@ export function AppContent() {
       .get("/config")
       .then((res) => {
         if (!cancelled && res?.data && typeof res.data === "object") {
-          setAppConfig((prev) => ({ ...prev, ...res.data }));
+          setAppConfig((prev) => ({
+            ...prev,
+            ...res.data,
+            adsense_client_id:
+              res.data.adsense_client_id || prev.adsense_client_id || "ca-pub-9577407700651547",
+          }));
         }
       })
       .catch(() => {

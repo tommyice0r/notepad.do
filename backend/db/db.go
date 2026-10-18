@@ -81,7 +81,7 @@ func initDefaultSettings() {
 		"scraper_enabled":     "true",
 		"maintenance_mode":    "false",
 		"adsense_enabled":     "true",
-		"adsense_client_id":   "",
+		"adsense_client_id":   "ca-pub-9577407700651547",
 		"adsense_slot_top":    "",
 		"adsense_slot_bottom": "",
 		"adsense_auto_ads":    "true",
@@ -97,6 +97,10 @@ func initDefaultSettings() {
 				Value:     v,
 				UpdatedAt: time.Now(),
 			})
+		} else if k == "adsense_client_id" && strings.TrimSpace(setting.Value) == "" {
+			setting.Value = v
+			setting.UpdatedAt = time.Now()
+			DB.Save(&setting)
 		}
 	}
 }
