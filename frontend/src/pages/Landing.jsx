@@ -141,8 +141,11 @@ export default function Landing() {
               className="w-full bg-transparent text-[#EDEDED] resize-none outline-none font-mono-code leading-relaxed"
               placeholder="Escribe algo aquí para probar..."
             />
-            <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-500 font-mono-code">
-              <span>✨ Detecta automáticamente contraseñas, claves y usuarios.</span>
+            <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-400 font-mono-code">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A]" />
+                <span>Detección automática de contraseñas, credenciales y URLs.</span>
+              </span>
               <button onClick={handleStartNew} className="text-[#FF9F0A] hover:underline font-bold font-manrope">
                 Abrir en pantalla completa →
               </button>
@@ -181,8 +184,9 @@ export default function Landing() {
                 Cada letra que pulsas se almacena en PostgreSQL de inmediato. Si se cierra la pestaña o se apaga tu ordenador, todo tu texto permanece intacto al volver.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-[#30D158]">
-              ✓ Sin botón de guardar necesario
+            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-[#30D158] flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>Sin botón de guardar necesario</span>
             </div>
           </div>
 
@@ -197,8 +201,9 @@ export default function Landing() {
                 ¿Contenido confidencial? Bloquea cualquier nota con una clave única con 1 solo clic. Nadie podrá ver el contenido sin la clave correcta.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-[#FF9F0A]">
-              ✓ Cifrado y rescate OxaPay disponible
+            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-[#FF9F0A] flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>Cifrado y rescate OxaPay disponible</span>
             </div>
           </div>
 
@@ -213,8 +218,9 @@ export default function Landing() {
                 ¿Tenías notas en el antiguo notepad.pw? Solo entra a la misma URL en Notepad.do y nuestro scraper rescatará automáticamente tu contenido para guardarlo aquí.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-blue-400">
-              ✓ 100% compatible con enlaces heredados
+            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-blue-400 flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>100% compatible con enlaces heredados</span>
             </div>
           </div>
 
@@ -229,8 +235,9 @@ export default function Landing() {
                 Detecta y formatea automáticamente tarjetas de crédito (Visa, Mastercard, Amex con algoritmo Luhn), contraseñas, URLs limpias, proxies y JSON con un solo clic.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-purple-400">
-              ✓ Tarjetas, credenciales y proxies
+            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-purple-400 flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>Tarjetas, credenciales y proxies</span>
             </div>
           </div>
 
@@ -245,8 +252,9 @@ export default function Landing() {
                 Genera un código QR interactivo para abrir tus apuntes instantáneamente en la cámara de tu teléfono móvil o compártelos por Telegram con un clic.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-emerald-400">
-              ✓ Transferencia móvil sin cables
+            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-emerald-400 flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>Transferencia móvil sin cables</span>
             </div>
           </div>
 
@@ -261,8 +269,9 @@ export default function Landing() {
                 Tu tiempo vale oro. Sin contraseñas obligatorias, sin correos de verificación y sin datos de tarjeta de crédito. Abre y escribe.
               </p>
             </div>
-            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-[#FF9F0A]">
-              ✓ Libertad absoluta y privacidad
+            <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-[#FF9F0A] flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 shrink-0" />
+              <span>Libertad absoluta y privacidad</span>
             </div>
           </div>
 

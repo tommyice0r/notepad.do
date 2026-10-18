@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Plus, Globe, Lock, Sparkles, X, RefreshCw, DownloadCloud, Pin
+  Plus, DownloadCloud, Sparkles, X, Lock, RefreshCw, Pin
 } from "lucide-react";
 
 export default function CreateNoteModal({
@@ -63,25 +63,24 @@ export default function CreateNoteModal({
   return (
     <dialog
       ref={dialogRef}
-      closedby="any"
       onClose={onClose}
       aria-labelledby="create-note-dialog-title"
-      className="pf-dialog w-full max-w-2xl m-auto text-[#EDEDED] font-manrope"
+      className="console-dialog w-full max-w-xl m-auto text-[#F4F4F5]"
     >
       <div className="p-6 flex flex-col gap-5">
         <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A]">
-              {mode === "import" ? <DownloadCloud className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+            <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white">
+              {mode === "import" ? <DownloadCloud className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </div>
             <div>
-              <h3 id="create-note-dialog-title" className="text-lg font-extrabold text-white">
-                {mode === "import" ? "Importar Nota desde notepad.pw" : "Crear Nueva Nota desde Admin"}
+              <h3 id="create-note-dialog-title" className="text-base font-bold text-white tracking-tight">
+                {mode === "import" ? "Importar Nota desde notepad.pw" : "Crear Nueva Nota"}
               </h3>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-zinc-400">
                 {mode === "import"
-                  ? "Extrae automáticamente el contenido de notepad.pw/{slug} y guárdalo en Notepad.do"
-                  : "Crea una nota con URL personalizada, contenido y contraseña opcional"}
+                  ? "Rescata el contenido remoto de notepad.pw y almacénalo en PostgreSQL."
+                  : "Crea una nota con slug personalizado, contenido y contraseña opcional."}
               </p>
             </div>
           </div>
@@ -90,33 +89,37 @@ export default function CreateNoteModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar ventana"
-            className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-gray-400 hover:text-white"
+            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Mode Switcher */}
-        <div className="grid grid-cols-2 gap-2 p-1 pf-well">
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#09090B] border border-white/[0.06] rounded-xl">
           <button
             type="button"
             onClick={() => setMode("create")}
-            className={`py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
-              mode === "create" ? "bg-[#FF9F0A] text-black shadow" : "text-gray-400 hover:text-white"
+            className={`py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              mode === "create" 
+                ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.1]" 
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Crear Nota Manual</span>
+            <span>Crear Manual</span>
           </button>
           <button
             type="button"
             onClick={() => setMode("import")}
-            className={`py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
-              mode === "import" ? "bg-[#FF9F0A] text-black shadow" : "text-gray-400 hover:text-white"
+            className={`py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              mode === "import" 
+                ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.1]" 
+                : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             <DownloadCloud className="w-3.5 h-3.5" />
-            <span>Importar de notepad.pw</span>
+            <span>Importar notepad.pw</span>
           </button>
         </div>
 
@@ -125,22 +128,22 @@ export default function CreateNoteModal({
             {/* Slug */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="create-note-slug" className="text-xs font-bold text-gray-300">
-                  Slug / Identificador URL *
+                <label htmlFor="create-note-slug" className="text-xs font-semibold text-zinc-300">
+                  Slug / Identificador *
                 </label>
                 {mode === "create" && (
                   <button
                     type="button"
                     onClick={generateRandomSlug}
-                    className="text-[11px] font-bold text-[#FF9F0A] hover:underline flex items-center gap-1"
+                    className="text-[11px] font-semibold text-[#F59E0B] hover:underline flex items-center gap-1"
                   >
                     <Sparkles className="w-3 h-3" />
-                    Aleatorio
+                    Generar
                   </button>
                 )}
               </div>
-              <div className="flex items-center bg-[#0E0E11] border border-white/[0.1] rounded-xl px-3.5 py-2.5 focus-within:border-[#FF9F0A]">
-                <span className="text-gray-500 font-mono-code text-xs mr-1">/</span>
+              <div className="flex items-center bg-[#0D0E10] border border-white/[0.08] rounded-xl px-3 py-2 focus-within:border-[#F59E0B] transition-colors">
+                <span className="text-zinc-500 font-mono-code text-xs mr-1">/</span>
                 <input
                   id="create-note-slug"
                   name="slug"
@@ -148,27 +151,27 @@ export default function CreateNoteModal({
                   required
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  placeholder="mi-nota-secreta"
-                  className="w-full bg-transparent text-sm text-white font-mono-code focus:outline-none"
+                  placeholder="mi-nota"
+                  className="w-full bg-transparent text-xs text-white font-mono-code focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Optional Password */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="create-note-pwd" className="text-xs font-bold text-gray-300">
-                Contraseña de Bloqueo (Opcional)
+              <label htmlFor="create-note-pwd" className="text-xs font-semibold text-zinc-300">
+                Contraseña (Opcional)
               </label>
-              <div className="flex items-center bg-[#0E0E11] border border-white/[0.1] rounded-xl px-3.5 py-2.5 focus-within:border-[#FF9F0A]">
-                <Lock className="w-3.5 h-3.5 text-gray-500 mr-2 shrink-0" />
+              <div className="flex items-center bg-[#0D0E10] border border-white/[0.08] rounded-xl px-3 py-2 focus-within:border-[#F59E0B] transition-colors">
+                <Lock className="w-3.5 h-3.5 text-zinc-500 mr-2 shrink-0" />
                 <input
                   id="create-note-pwd"
                   name="password"
                   type="text"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Dejar vacío para pública..."
-                  className="w-full bg-transparent text-sm text-white font-mono-code focus:outline-none"
+                  placeholder="Dejar vacía para pública..."
+                  className="w-full bg-transparent text-xs text-white font-mono-code focus:outline-none"
                 />
               </div>
             </div>
@@ -177,24 +180,24 @@ export default function CreateNoteModal({
           {mode === "create" && (
             <>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="create-note-content" className="text-xs font-bold text-gray-300">
+                <label htmlFor="create-note-content" className="text-xs font-semibold text-zinc-300">
                   Contenido de la Nota
                 </label>
                 <textarea
                   id="create-note-content"
                   name="content"
-                  rows={8}
+                  rows={7}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Escribe o pega el contenido de la nota aquí..."
-                  className="w-full bg-[#0E0E11] border border-white/[0.1] rounded-xl p-3.5 text-xs sm:text-sm text-white font-mono-code focus:border-[#FF9F0A]"
+                  placeholder="Escribe o pega el texto aquí..."
+                  className="w-full bg-[#0D0E10] border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 font-mono-code focus:border-[#F59E0B] focus:outline-none leading-relaxed"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="create-admin-notes" className="text-xs font-bold text-gray-300">
-                    Nota Interna del Admin (Privada)
+                  <label htmlFor="create-admin-notes" className="text-xs font-semibold text-zinc-300">
+                    Anotación Interna del Admin
                   </label>
                   <input
                     id="create-admin-notes"
@@ -202,42 +205,42 @@ export default function CreateNoteModal({
                     type="text"
                     value={adminNotes}
                     onChange={(e) => setAdminNotes(e.target.value)}
-                    placeholder="Etiqueta o recordatorio interno..."
-                    className="w-full bg-[#0E0E11] border border-white/[0.1] rounded-xl px-3.5 py-2 text-xs text-white"
+                    placeholder="Referencia o etiqueta privada..."
+                    className="w-full bg-[#0D0E10] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:border-[#F59E0B] focus:outline-none"
                   />
                 </div>
 
-                <label className="flex items-center gap-2.5 cursor-pointer select-none pt-4">
+                <label className="flex items-center gap-2 cursor-pointer select-none pt-4">
                   <input
                     type="checkbox"
                     checked={isPinned}
                     onChange={(e) => setIsPinned(e.target.checked)}
-                    className="w-4 h-4 rounded accent-[#FF9F0A]"
+                    className="w-4 h-4 rounded accent-[#F59E0B]"
                   />
-                  <Pin className="w-3.5 h-3.5 text-[#FF9F0A]" />
-                  <span className="text-xs font-bold text-gray-200">
-                    Fijar nota arriba del listado (Pin)
+                  <Pin className="w-3.5 h-3.5 text-[#F59E0B]" />
+                  <span className="text-xs font-medium text-zinc-300">
+                    Fijar nota arriba en el listado
                   </span>
                 </label>
               </div>
             </>
           )}
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/[0.08]">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
             <button
               type="button"
               onClick={onClose}
-              className="pf-btn-secondary px-4 py-2.5 text-xs font-bold"
+              className="console-btn-secondary px-3.5 py-2 text-xs"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading || !slug.trim()}
-              className="pf-btn-primary px-5 py-2.5 text-xs font-extrabold flex items-center gap-1.5 disabled:opacity-50"
+              className="console-btn-primary px-4 py-2 text-xs flex items-center gap-1.5 disabled:opacity-50"
             >
               {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-              <span>{mode === "import" ? "Extraer e Importar Nota" : "Crear Nota"}</span>
+              <span>{mode === "import" ? "Extraer e Importar" : "Crear Nota"}</span>
             </button>
           </div>
         </form>

@@ -8,7 +8,7 @@ import {
   Sparkles, FileEdit, Activity, ExternalLink,
   CreditCard, Eye, EyeOff, ShieldCheck, CheckCheck,
   ChevronDown, ChevronUp, Globe, Terminal, Shield,
-  Palette, Calculator, Equal
+  Palette, Calculator, Equal, Link2
 } from "lucide-react";
 import {
   detectAllPatterns,
@@ -647,23 +647,27 @@ Funciones útiles que puedes probar:
                   </span>
                 )}
                 {patterns.counts.cards > 0 && (
-                  <span className="pf-pill bg-amber-500/10 text-[#FF9F0A] border border-amber-500/25 text-[10px] py-0.5 px-2">
-                    💳 {patterns.counts.cards} tarjeta(s)
+                  <span className="pf-pill bg-amber-500/10 text-[#FF9F0A] border border-amber-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
+                    <CreditCard className="w-3 h-3" />
+                    <span>{patterns.counts.cards} tarjeta(s)</span>
                   </span>
                 )}
                 {patterns.counts.passwords > 0 && (
-                  <span className="pf-pill bg-red-500/10 text-[#FF6961] border border-red-500/25 text-[10px] py-0.5 px-2">
-                    🔑 {patterns.counts.passwords} clave(s)
+                  <span className="pf-pill bg-red-500/10 text-[#FF6961] border border-red-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
+                    <KeyRound className="w-3 h-3" />
+                    <span>{patterns.counts.passwords} clave(s)</span>
                   </span>
                 )}
                 {patterns.counts.urls > 0 && (
-                  <span className="pf-pill bg-blue-500/10 text-[#38BDF8] border border-blue-500/25 text-[10px] py-0.5 px-2">
-                    🔗 {patterns.counts.urls} enlace(s)
+                  <span className="pf-pill bg-blue-500/10 text-[#38BDF8] border border-blue-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
+                    <Link2 className="w-3 h-3" />
+                    <span>{patterns.counts.urls} enlace(s)</span>
                   </span>
                 )}
                 {patterns.counts.proxies > 0 && (
-                  <span className="pf-pill bg-purple-500/10 text-[#C084FC] border border-purple-500/25 text-[10px] py-0.5 px-2">
-                    🌐 {patterns.counts.proxies} proxy(s)
+                  <span className="pf-pill bg-purple-500/10 text-[#C084FC] border border-purple-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
+                    <Globe className="w-3 h-3" />
+                    <span>{patterns.counts.proxies} proxy(s)</span>
                   </span>
                 )}
               </div>
@@ -758,7 +762,7 @@ Funciones útiles que puedes probar:
                               {card.isValid ? (
                                 <span className="text-[10px] text-[#30D158] font-bold flex items-center gap-1">
                                   <CheckCheck className="w-3 h-3" />
-                                  <span>Luhn ✓</span>
+                                  <span>Luhn OK</span>
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-yellow-400 font-semibold">
@@ -837,8 +841,9 @@ Funciones útiles que puedes probar:
                             className="px-3 py-2 rounded-xl bg-[#141416] border border-white/[0.08] flex items-center justify-between gap-2 text-xs"
                           >
                             <div className="flex items-center gap-2 overflow-hidden flex-1">
-                              <span className="text-red-400 font-bold font-mono-code text-[11px] shrink-0">
-                                🔑 {pwd.full.split(/[:=]/)[0]}:
+                              <span className="text-red-400 font-bold font-mono-code text-[11px] shrink-0 flex items-center gap-1">
+                                <KeyRound className="w-3 h-3" />
+                                <span>{pwd.full.split(/[:=]/)[0]}:</span>
                               </span>
                               <span className="font-mono-code text-white text-[11px] truncate">
                                 {privacyMode || !isRevealed ? "••••••••" : pwd.value}
@@ -912,7 +917,10 @@ Funciones útiles que puedes probar:
                   <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-white/[0.04]">
                     {patterns.proxies.length > 0 && (
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-purple-400 font-bold">🌐 {patterns.proxies.length} proxy(s)</span>
+                        <span className="text-purple-400 font-bold flex items-center gap-1">
+                          <Globe className="w-3.5 h-3.5" />
+                          <span>{patterns.proxies.length} proxy(s)</span>
+                        </span>
                         <button
                           onClick={() => {
                             const proxyText = patterns.proxies.map(p => p.raw).join("\n");

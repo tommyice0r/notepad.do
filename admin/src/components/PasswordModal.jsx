@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   KeyRound, Lock, Unlock, Copy, Check, Eye, EyeOff,
-  X, ShieldAlert, Sparkles, RefreshCw
+  X, Sparkles, RefreshCw
 } from "lucide-react";
 
 export default function PasswordModal({
@@ -54,24 +54,23 @@ export default function PasswordModal({
   return (
     <dialog
       ref={dialogRef}
-      closedby="any"
       onClose={onClose}
       aria-labelledby="pwd-dialog-title"
-      className="pf-dialog w-full max-w-lg m-auto text-[#EDEDED] font-manrope"
+      className="console-dialog w-full max-w-md m-auto text-[#F4F4F5]"
     >
       <div className="p-6 flex flex-col gap-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-white/[0.08] pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A]">
-              <KeyRound className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white">
+              <KeyRound className="w-4 h-4" />
             </div>
             <div>
-              <h3 id="pwd-dialog-title" className="text-lg font-extrabold text-white tracking-tight">
+              <h3 id="pwd-dialog-title" className="text-base font-bold text-white tracking-tight">
                 Gestión de Contraseña
               </h3>
-              <p className="text-xs text-gray-400 font-mono-code">
-                Nota: <span className="text-[#FF9F0A] font-semibold">/{note.slug}</span>
+              <p className="text-xs text-zinc-400 font-mono-code">
+                Nota: <span className="text-[#F59E0B]">/{note.slug}</span>
               </p>
             </div>
           </div>
@@ -79,45 +78,45 @@ export default function PasswordModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar modal"
-            className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-gray-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-white transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Current Password Status Box */}
-        <div className="pf-well p-4 flex flex-col gap-2.5">
+        <div className="console-well p-4 flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">
-              Estado Actual de Protección
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+              Estado Actual
             </span>
             {note.has_password ? (
-              <span className="pf-pill pf-pill-danger">
+              <span className="console-badge console-badge-rose">
                 <Lock className="w-3 h-3" />
-                Protegida con Clave
+                <span>Protegida con Clave</span>
               </span>
             ) : (
-              <span className="pf-pill pf-pill-ok">
+              <span className="console-badge console-badge-emerald">
                 <Unlock className="w-3 h-3" />
-                Pública (Sin Contraseña)
+                <span>Pública</span>
               </span>
             )}
           </div>
 
           {note.has_password && (
             <div className="mt-1 space-y-2">
-              <div className="flex items-center justify-between bg-[#141416] border border-white/[0.08] rounded-xl px-3.5 py-2.5">
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">
-                    Contraseña en Texto Plano
+              <div className="flex items-center justify-between bg-[#111113] border border-white/[0.08] rounded-xl px-3 py-2">
+                <div className="flex flex-col min-w-0 pr-2">
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">
+                    Clave en Texto Plano
                   </span>
                   {note.password_plain ? (
-                    <span className="text-sm font-bold text-[#FF9F0A] font-mono-code break-all">
+                    <span className="text-xs font-semibold text-white font-mono-code break-all">
                       {note.password_plain}
                     </span>
                   ) : (
-                    <span className="text-xs text-amber-300/90 italic">
-                      Hash Bcrypt antiguo (asigna una nueva clave abajo para verla en texto plano)
+                    <span className="text-xs text-amber-400/80 italic">
+                      Hash Bcrypt legado (asigna una nueva clave para guardarla en texto)
                     </span>
                   )}
                 </div>
@@ -125,17 +124,17 @@ export default function PasswordModal({
                   <button
                     type="button"
                     onClick={() => handleCopy(note.password_plain)}
-                    className="pf-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5 shrink-0"
+                    className="console-btn-secondary px-2.5 py-1 text-xs flex items-center gap-1.5 shrink-0"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-[#30D158]" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copied ? "Copiada" : "Copiar"}</span>
                   </button>
                 )}
               </div>
 
               {note.password_hash && (
-                <div className="text-[11px] text-gray-500 font-mono-code break-all bg-black/30 px-3 py-2 rounded-lg border border-white/[0.04]">
-                  <span className="text-gray-400 font-semibold">Hash DB: </span>
+                <div className="text-[10px] text-zinc-500 font-mono-code break-all bg-[#09090B] px-3 py-2 rounded-lg border border-white/[0.04]">
+                  <span className="text-zinc-400">Hash DB: </span>
                   {note.password_hash}
                 </div>
               )}
@@ -147,16 +146,16 @@ export default function PasswordModal({
         <form method="post" onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label htmlFor="note-new-password" className="text-xs font-bold text-gray-300">
-                {note.has_password ? "Cambiar Contraseña de la Nota" : "Establecer Nueva Contraseña"}
+              <label htmlFor="note-new-password" className="text-xs font-semibold text-zinc-300">
+                {note.has_password ? "Nueva Contraseña" : "Establecer Contraseña"}
               </label>
               <button
                 type="button"
                 onClick={generateRandomPassword}
-                className="text-[11px] font-bold text-[#FF9F0A] hover:underline flex items-center gap-1"
+                className="text-[11px] font-semibold text-[#F59E0B] hover:underline flex items-center gap-1"
               >
                 <Sparkles className="w-3 h-3" />
-                Generar clave segura
+                Generar segura
               </button>
             </div>
 
@@ -167,55 +166,54 @@ export default function PasswordModal({
                 type={showPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Escribe la contraseña para esta nota..."
-                aria-describedby="pwd-help-text"
-                className="w-full bg-[#0E0E11] border border-white/[0.1] rounded-xl pl-4 pr-20 py-3 text-sm text-white font-mono-code focus:border-[#FF9F0A]"
+                placeholder="Escribe la clave de la nota..."
+                className="w-full bg-[#0D0E10] border border-white/[0.08] rounded-xl pl-3.5 pr-16 py-2.5 text-xs text-white font-mono-code focus:border-[#F59E0B] focus:outline-none"
               />
               <button
                 type="button"
                 aria-pressed={showPassword}
-                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-label={showPassword ? "Ocultar clave" : "Mostrar clave"}
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 p-1.5 text-gray-400 hover:text-white rounded-lg"
+                className="absolute right-2.5 p-1 text-zinc-400 hover:text-white rounded-md"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <span id="pwd-help-text" className="text-[11px] text-gray-500">
-              Se guardará tanto en texto plano (visible para el Admin) como en hash Bcrypt para el bloqueo público.
+            <span className="text-[11px] text-zinc-500">
+              Se guarda en texto plano para el Admin y con hash criptográfico Bcrypt para la protección pública.
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/[0.08]">
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.08]">
             {note.has_password ? (
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => onUnlockNote(note.slug)}
-                className="px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-[#30D158] border border-emerald-500/30 text-xs font-extrabold flex items-center gap-1.5 transition-colors"
+                className="console-btn-danger px-3 py-2 text-xs flex items-center gap-1.5"
               >
                 <Unlock className="w-3.5 h-3.5" />
-                <span>Quitar Contraseña (Desbloquear)</span>
+                <span>Desbloquear</span>
               </button>
             ) : (
               <div />
             )}
 
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="pf-btn-secondary px-4 py-2.5 text-xs font-bold"
+                className="console-btn-secondary px-3.5 py-2 text-xs"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading || !newPassword.trim()}
-                className="pf-btn-primary px-5 py-2.5 text-xs font-extrabold flex items-center gap-1.5 disabled:opacity-50"
+                className="console-btn-primary px-4 py-2 text-xs flex items-center gap-1.5 disabled:opacity-50"
               >
                 {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
-                <span>Guardar Contraseña</span>
+                <span>Guardar Clave</span>
               </button>
             </div>
           </div>

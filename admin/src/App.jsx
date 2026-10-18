@@ -18,8 +18,8 @@ import {
   AlertCircle, ExternalLink, Plus, Trash2, Eye, EyeOff,
   Pin, CreditCard, User, Globe, Database, Settings,
   MessageSquare, Activity, Download, DownloadCloud,
-  Sparkles, FolderArchive, CheckSquare, Square, RotateCcw,
-  Server, Link2
+  Sparkles, CheckSquare, Square, RotateCcw,
+  Server, ChevronRight, Hash, Filter, ArrowUpDown
 } from "lucide-react";
 
 export default function App() {
@@ -34,7 +34,7 @@ export default function App() {
   const [customEndpointInput, setCustomEndpointInput] = useState(() => getCustomApiOverride());
 
   // Active Navigation Tab
-  const [activeTab, setActiveTab] = useState("notes"); // "dashboard" | "notes" | "vault" | "payments" | "messages" | "settings"
+  const [activeTab, setActiveTab] = useState("notes"); // "notes" | "vault" | "payments" | "messages" | "logs" | "settings"
 
   // Server Data States
   const [stats, setStats] = useState({
@@ -109,9 +109,9 @@ export default function App() {
 
     setLoading(true);
     setLoginError("");
-    const headers = { "X-Admin-Key": key };
 
     try {
+      const headers = { "X-Admin-Key": key };
       const [statsRes, notesRes, paymentsRes, messagesRes, logsRes, settingsRes] = await Promise.all([
         api.get("/admin/stats", { headers }),
         api.get("/admin/notes?include_deleted=true", { headers }),
@@ -138,13 +138,13 @@ export default function App() {
       setIsAuthenticated(true);
     } catch (err) {
       if (err.response?.status === 401) {
-        setLoginError("Clave maestra de administración incorrecta.");
+        setLoginError("Clave de administrador incorrecta.");
         setIsAuthenticated(false);
         clearAdminKey();
       } else {
         const endpoint = getAdminApiBase();
         const msg = err.response?.data?.error || err.message || "Error de red/CORS";
-        setLoginError(`No se pudo conectar con el servidor Go en ${endpoint} (${msg}). Verifica que el backend esté en ejecución y permita CORS.`);
+        setLoginError(`No se pudo conectar con el servidor Go en ${endpoint} (${msg}). Verifica que el backend esté accesible.`);
       }
     } finally {
       setLoading(false);
@@ -191,9 +191,11 @@ export default function App() {
     });
 
     list.sort((a, b) => {
-      if (statusFilter !== "trash" && a.is_pinned !== b.is_pinned) {
-        return a.is_pinned ? -1 : 1;
+      if (statusFilter !== "trash") {
+        if (a.is_pinned && !b.is_pinned) return -1;
+        if (!a.is_pinned && b.is_pinned) return 1;
       }
+
       if (sortBy === "created_desc") {
         return new Date(b.created_at) - new Date(a.created_at);
       }
@@ -212,7 +214,7 @@ export default function App() {
     return list;
   }, [notes, searchTerm, statusFilter, sortBy, globalScan]);
 
-  // --- AUTH HANDLERS ---
+  // Auth Handlers
   const handleLogin = (e) => {
     e.preventDefault();
     if (!loginInput.trim()) return;
@@ -227,7 +229,7 @@ export default function App() {
     setLoginInput("");
   };
 
-  // --- CRUD & ADMIN ACTIONS ---
+  // CRUD & Admin Actions
   const handleSetNotePassword = async (slug, password) => {
     setActionLoading(true);
     try {
@@ -249,10 +251,10 @@ export default function App() {
     setActionLoading(true);
     try {
       await api.post(`/admin/notes/${encodeURIComponent(slug)}/password`, {
-        password: "",
+        password,
         unlock: true
       });
-      showToast(`Nota /${slug} desbloqueada (contraseña eliminada)`);
+      showToast(`Nota /${slug} desbloqueada`);
       setPasswordModalNote(null);
       await fetchAllAdminData();
     } catch (err) {
@@ -309,7 +311,7 @@ export default function App() {
       await api.put(`/admin/notes/${encodeURIComponent(note.slug)}`, {
         is_pinned: !note.is_pinned
       });
-      showToast(note.is_pinned ? `Nota /${note.slug} desfijada` : `Nota /${note.slug} fijada arriba`);
+      showToast(note.is_pinned ? `Nota /${note.slug} desfijada` : `Nota /${note.slug} fijada`);
       await fetchAllAdminData();
     } catch (err) {
       showToast("No se pudo cambiar el estado fijado", "error");
@@ -320,7 +322,7 @@ export default function App() {
     setActionLoading(true);
     try {
       await api.delete(`/admin/notes/${encodeURIComponent(slug)}?permanent=${permanent}`);
-      showToast(permanent ? `Nota /${slug} eliminada permanentemente` : `Nota /${slug} enviada a la papelera`);
+      showToast(permanent ? `Nota /${slug} eliminada definitivamente` : `Nota /${slug} enviada a papelera`);
       setInspectingNote(null);
       setSelectedSlugs((prev) => prev.filter((s) => s !== slug));
       await fetchAllAdminData();
@@ -335,7 +337,7 @@ export default function App() {
     setActionLoading(true);
     try {
       await api.post(`/admin/notes/${encodeURIComponent(slug)}/restore`);
-      showToast(`Nota /${slug} restaurada de la papelera`);
+      showToast(`Nota /${slug} restaurada`);
       setInspectingNote(null);
       await fetchAllAdminData();
     } catch (err) {
@@ -345,7 +347,7 @@ export default function App() {
     }
   };
 
-  // --- BULK ACTIONS ---
+  // Bulk Actions
   const toggleSelectSlug = (slug) => {
     setSelectedSlugs((prev) =>
       prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
@@ -385,11 +387,11 @@ export default function App() {
     }
   };
 
-  // --- PAYMENTS, MESSAGES, SETTINGS & EXPORT ---
+  // Payments, Messages, Settings & Export
   const handleApprovePayment = async (id) => {
     try {
       await api.post(`/admin/payments/${id}/approve`);
-      showToast("Pago aprobado y nota desbloqueada automáticamente");
+      showToast("Pago aprobado y nota desbloqueada");
       await fetchAllAdminData();
     } catch (err) {
       showToast("Error al aprobar pago", "error");
@@ -431,7 +433,7 @@ export default function App() {
     setActionLoading(true);
     try {
       await api.put("/admin/settings", settings);
-      showToast("Configuración global de Notepad.do guardada");
+      showToast("Configuración del servidor guardada");
       await fetchAllAdminData();
     } catch (err) {
       showToast("Error al guardar configuración", "error");
@@ -450,7 +452,7 @@ export default function App() {
     }
   };
 
-  const handleExportDatabase = async (format = "json") => {
+  const handleExportDatabase = async (format = "csv") => {
     try {
       const res = await api.get("/admin/export");
       if (format === "csv") {
@@ -474,7 +476,7 @@ export default function App() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `notepad-do-notas-passwords-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `notepad-do-passwords-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
       } else {
@@ -482,39 +484,36 @@ export default function App() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `notepad-do-backup-completo-${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `notepad-do-backup-${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
         URL.revokeObjectURL(url);
       }
-      showToast(`Exportación ${format.toUpperCase()} descargada`);
+      showToast(`Exportación ${format.toUpperCase()} completada`);
     } catch (err) {
-      showToast("Error al exportar la base de datos", "error");
+      showToast("Error al exportar base de datos", "error");
     }
   };
 
-  // --- LOGIN VIEW ---
+  // --- LOGIN SCREEN (Clean Minimalist Console Architecture) ---
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[#060607]">
-        <div className="w-full max-w-md pf-panel p-7 sm:p-8 flex flex-col items-center">
-          <div className="w-16 h-16 rounded-2xl bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A] mb-4 shadow-[0_8px_28px_rgba(255,159,10,0.2)]">
-            <Shield className="w-8 h-8" />
+      <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[#09090B]">
+        <div className="w-full max-w-sm console-card p-7 flex flex-col items-center border border-white/[0.08]">
+          <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.1] flex items-center justify-center text-white mb-4">
+            <Lock className="w-5 h-5" />
           </div>
 
-          <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#FF9F0A] mb-1">
-            Notepad.do · Servidor Go
-          </span>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight text-center mb-1">
-            Centro de Administración Master
+          <h1 className="text-xl font-bold text-white tracking-tight text-center mb-1">
+            Notepad Console
           </h1>
-          <p className="text-xs text-gray-400 text-center mb-6 leading-relaxed">
-            Control total de todas las notas, contraseñas en texto plano, desbloqueos, inteligencia de datos y configuración del servidor.
+          <p className="text-xs text-zinc-400 text-center mb-6">
+            Centro de Operaciones y Base de Datos
           </p>
 
           <form method="post" onSubmit={handleLogin} className="w-full space-y-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="admin-key-input" className="text-xs font-bold text-gray-300">
-                Clave Maestra de Administrador (ADMIN_API_KEY)
+              <label htmlFor="admin-key-input" className="text-xs font-semibold text-zinc-300">
+                Clave Maestra (ADMIN_API_KEY)
               </label>
               <div className="relative flex items-center">
                 <input
@@ -526,7 +525,7 @@ export default function App() {
                   value={loginInput}
                   onChange={(e) => setLoginInput(e.target.value)}
                   placeholder="Introduce la clave maestra..."
-                  className="w-full bg-[#0E0E11] border border-white/[0.1] rounded-xl pl-4 pr-11 py-3 text-sm text-white placeholder-gray-500 font-mono-code focus:border-[#FF9F0A]"
+                  className="w-full bg-[#0D0E10] border border-white/[0.08] rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-white placeholder-zinc-500 font-mono-code focus:border-[#F59E0B] focus:outline-none"
                   autoFocus
                 />
                 <button
@@ -534,7 +533,7 @@ export default function App() {
                   aria-pressed={showLoginPwd}
                   aria-label={showLoginPwd ? "Ocultar clave" : "Mostrar clave"}
                   onClick={() => setShowLoginPwd(!showLoginPwd)}
-                  className="absolute right-3 p-1.5 text-gray-400 hover:text-white rounded-lg"
+                  className="absolute right-2.5 p-1 text-zinc-500 hover:text-white rounded-md"
                 >
                   {showLoginPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -542,20 +541,20 @@ export default function App() {
             </div>
 
             <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-gray-400 hover:text-gray-200 select-none">
+              <label className="flex items-center gap-2 cursor-pointer text-zinc-400 hover:text-zinc-200 select-none">
                 <input
                   type="checkbox"
                   checked={rememberSession}
                   onChange={(e) => setRememberSession(e.target.checked)}
-                  className="w-4 h-4 rounded accent-[#FF9F0A]"
+                  className="w-3.5 h-3.5 rounded accent-[#F59E0B]"
                 />
-                <span>Mantener sesión iniciada</span>
+                <span>Recordar sesión</span>
               </label>
             </div>
 
             {loginError && (
-              <div role="alert" aria-live="polite" className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-xs text-[#FF6961] font-bold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div role="alert" className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{loginError}</span>
               </div>
             )}
@@ -563,41 +562,41 @@ export default function App() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full pf-btn-primary py-3 text-sm font-extrabold flex items-center justify-center gap-2"
+              className="w-full console-btn-primary py-2.5 text-xs flex items-center justify-center gap-2"
             >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-              <span>{loading ? "Verificando acceso..." : "Acceder al Panel Master"}</span>
+              {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+              <span>{loading ? "Verificando acceso..." : "Acceder a la Consola"}</span>
             </button>
 
-            <div className="pt-2 border-t border-white/[0.08] w-full">
-              <div className="flex items-center justify-between text-[11px] text-gray-500">
+            <div className="pt-3 border-t border-white/[0.06] w-full">
+              <div className="flex items-center justify-between text-[11px] text-zinc-500">
                 <div className="flex items-center gap-1.5 truncate mr-2">
-                  <Server className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" />
-                  <span className="text-gray-400">API:</span>
-                  <span className="font-mono text-gray-300 truncate" title={currentApiEndpoint}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="text-zinc-400">API:</span>
+                  <span className="font-mono text-zinc-300 truncate" title={currentApiEndpoint}>
                     {currentApiEndpoint}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowEndpointConfig(!showEndpointConfig)}
-                  className="text-[#FF9F0A] hover:underline text-[11px] font-semibold shrink-0"
+                  className="text-[#F59E0B] hover:underline text-[11px] font-medium shrink-0"
                 >
                   {showEndpointConfig ? "Cerrar" : "Cambiar"}
                 </button>
               </div>
 
               {showEndpointConfig && (
-                <div className="mt-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-left space-y-2">
-                  <label className="text-[11px] font-bold text-gray-300 block">
-                    URL del Backend Go:
+                <div className="mt-3 p-3 rounded-xl bg-[#0D0E10] border border-white/[0.08] text-left space-y-2">
+                  <label className="text-[11px] font-semibold text-zinc-300 block">
+                    URL del Backend:
                   </label>
                   <input
                     type="url"
                     value={customEndpointInput}
                     onChange={(e) => setCustomEndpointInput(e.target.value)}
                     placeholder="https://secure.notepad.do"
-                    className="w-full bg-[#0E0E11] border border-white/[0.1] rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-[#FF9F0A]"
+                    className="w-full bg-[#111113] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-white font-mono-code focus:border-[#F59E0B] focus:outline-none"
                   />
                   <div className="flex items-center gap-2 pt-1">
                     <button
@@ -609,7 +608,7 @@ export default function App() {
                         setShowEndpointConfig(false);
                         setLoginError("");
                       }}
-                      className="px-3 py-1 bg-[#FF9F0A] text-black text-xs font-bold rounded-lg hover:bg-[#FFB340] transition-colors"
+                      className="console-btn-primary px-3 py-1 text-xs"
                     >
                       Guardar URL
                     </button>
@@ -622,7 +621,7 @@ export default function App() {
                         setCurrentApiEndpoint(updated);
                         setShowEndpointConfig(false);
                       }}
-                      className="px-2.5 py-1 bg-white/[0.05] text-gray-400 text-xs rounded-lg hover:text-white transition-colors"
+                      className="console-btn-secondary px-2.5 py-1 text-xs"
                     >
                       Restablecer
                     </button>
@@ -637,41 +636,45 @@ export default function App() {
   }
 
   const protectedNotesList = activeNotes.filter((n) => n.has_password);
+  const sensitiveNotesCount = activeNotes.filter((n) => (globalScan.bySlug[n.slug]?.totalFindings || 0) > 0).length;
 
   return (
-    <div className="min-h-screen w-full bg-[#060607] text-[#EDEDED] font-manrope flex flex-col">
+    <div className="min-h-screen w-full bg-[#09090B] text-[#F4F4F5] flex flex-col">
       {/* Toast Notification */}
       {toast && (
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-2xl border shadow-2xl text-xs font-extrabold flex items-center gap-2.5 transition-all ${
+          className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl border shadow-xl text-xs font-semibold flex items-center gap-2 transition-all ${
             toast.type === "error"
-              ? "bg-[#1F1214] border-red-500/40 text-[#FF6961]"
-              : "bg-[#121F17] border-emerald-500/40 text-[#30D158]"
+              ? "bg-[#181113] border-rose-500/30 text-rose-400"
+              : "bg-[#0F1A14] border-emerald-500/30 text-emerald-400"
           }`}
         >
-          {toast.type === "error" ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+          {toast.type === "error" ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
           <span>{toast.msg}</span>
         </div>
       )}
 
-      {/* Top Master Header */}
-      <header className="sticky top-0 z-30 bg-[#0A0A0C]/90 backdrop-blur-xl border-b border-white/[0.08]">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      {/* Top Header */}
+      <header className="sticky top-0 z-30 bg-[#09090B]/90 backdrop-blur-xl border-b border-white/[0.08]">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A]">
-              <Shield className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white">
+              <Lock className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
-                  Notepad.do <span className="text-[#FF9F0A]">Admin Master</span>
+                <h1 className="text-sm font-bold text-white tracking-tight">
+                  Notepad Console
                 </h1>
-                <span className="pf-pill pf-pill-ok text-[10px]">Go Server :8080</span>
+                <span className="console-badge console-badge-emerald text-[10px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  En línea
+                </span>
               </div>
-              <p className="text-[11px] text-gray-400">
-                {stats.total_notes} notas activas · {stats.protected_notes} con contraseña · {globalScan.cards.length + globalScan.passwords.length} credenciales/tarjetas detectadas
+              <p className="text-[11px] text-zinc-400 font-mono-code">
+                {stats.total_notes} notas registradas · {stats.protected_notes} protegidas
               </p>
             </div>
           </div>
@@ -683,7 +686,7 @@ export default function App() {
                 setCreateModalMode("create");
                 setCreateModalOpen(true);
               }}
-              className="pf-btn-primary px-3.5 py-2 text-xs font-extrabold flex items-center gap-1.5"
+              className="console-btn-primary px-3 py-1.5 text-xs flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nueva Nota</span>
@@ -695,132 +698,262 @@ export default function App() {
                 setCreateModalMode("import");
                 setCreateModalOpen(true);
               }}
-              className="pf-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5"
+              className="console-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
             >
-              <DownloadCloud className="w-3.5 h-3.5 text-[#FF9F0A]" />
+              <DownloadCloud className="w-3.5 h-3.5 text-[#F59E0B]" />
               <span className="hidden sm:inline">Importar notepad.pw</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleExportDatabase("csv")}
-              className="pf-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5"
-              title="Descargar CSV con todas las notas y sus contraseñas"
+              className="console-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
+              title="Descargar base de datos con contraseñas en CSV"
             >
-              <Download className="w-3.5 h-3.5 text-[#30D158]" />
-              <span className="hidden md:inline">Exportar Claves CSV</span>
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden md:inline">Exportar CSV</span>
             </button>
 
             <button
               type="button"
               onClick={() => fetchAllAdminData()}
               disabled={loading}
-              className="pf-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5"
+              className="console-btn-secondary px-2.5 py-1.5 text-xs flex items-center gap-1.5"
+              title="Sincronizar datos"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#FF9F0A]" : ""}`} />
-              <span className="hidden sm:inline">Sincronizar</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#F59E0B]" : ""}`} />
             </button>
 
             <a
               href={PUBLIC_SITE_ORIGIN}
               target="_blank"
               rel="noreferrer"
-              className="pf-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5"
+              className="console-btn-secondary px-2.5 py-1.5 text-xs flex items-center gap-1"
+              title="Abrir sitio web público"
             >
-              <span>Ir a Notepad.do</span>
-              <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
             </a>
 
             <button
               type="button"
               onClick={handleLogout}
               title="Cerrar sesión"
-              className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-[#FF6961] border border-red-500/25 text-xs font-bold"
+              className="console-btn-danger px-2.5 py-1.5 text-xs flex items-center gap-1 ml-1"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
-
-        {/* Navigation Bar */}
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center gap-1.5 overflow-x-auto pb-2.5">
-          {[
-            { id: "notes", label: `Todas las Notas y Contraseñas (${activeNotes.length})`, icon: FileText },
-            { id: "dashboard", label: "Dashboard & Resumen", icon: Activity },
-            {
-              id: "vault",
-              label: `Bóveda de Claves & Tarjetas (${protectedNotesList.length + globalScan.passwords.length + globalScan.cards.length})`,
-              icon: KeyRound
-            },
-            { id: "payments", label: `Pagos BTC (${payments.length})`, icon: DollarSign },
-            {
-              id: "messages",
-              label: `Soporte / DMCA (${stats.unread_messages || 0} nuevos)`,
-              icon: MessageSquare
-            },
-            { id: "settings", label: "Configuración, Logs & Backup", icon: Settings }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap flex items-center gap-2 transition-all ${
-                  isActive
-                    ? "bg-[#FF9F0A] text-black shadow-[0_4px_16px_rgba(255,159,10,0.3)]"
-                    : "bg-[#141416] text-gray-400 hover:text-white border border-white/[0.05]"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
       </header>
 
-      {/* Main Content Container */}
-      <main className="max-w-[1440px] w-full mx-auto flex-1 p-4 sm:p-6 space-y-6">
-        {/* =========================================================
-            TAB 1: TODAS LAS NOTAS Y CONTRASEÑAS (NOTES & PASSWORDS)
-           ========================================================= */}
+      {/* Main Container */}
+      <main className="max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-6 flex-1 flex flex-col gap-6">
+        
+        {/* KPI Summary Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="console-card p-4 flex flex-col justify-between">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Total Notas
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-2xl font-bold text-white font-mono-code tabular-nums">
+                {activeNotes.length}
+              </span>
+              <span className="text-xs text-zinc-400 font-mono-code">
+                {((stats.total_bytes || 0) / 1024).toFixed(1)} KB
+              </span>
+            </div>
+          </div>
+
+          <div className="console-card p-4 flex flex-col justify-between">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Protegidas con Clave
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-2xl font-bold text-white font-mono-code tabular-nums">
+                {protectedNotesList.length}
+              </span>
+              <span className="text-xs text-emerald-400 font-mono-code">
+                {activeNotes.length - protectedNotesList.length} públicas
+              </span>
+            </div>
+          </div>
+
+          <div className="console-card p-4 flex flex-col justify-between">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Bóveda de Inteligencia
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-2xl font-bold text-[#F59E0B] font-mono-code tabular-nums">
+                {globalScan.cards.length + globalScan.passwords.length}
+              </span>
+              <span className="text-xs text-zinc-400 font-mono-code">
+                {globalScan.cards.length} tarjetas · {globalScan.passwords.length} claves
+              </span>
+            </div>
+          </div>
+
+          <div className="console-card p-4 flex flex-col justify-between">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Ingresos OxaPay
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <span className="text-2xl font-bold text-white font-mono-code tabular-nums">
+                ${stats.total_revenue || 0}
+              </span>
+              <span className="text-xs text-zinc-400 font-mono-code">
+                {payments.length} órdenes · {messages.length} mensajes
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Segmented Navigation Tab Bar */}
+        <div className="flex items-center gap-1.5 p-1 bg-[#111113] border border-white/[0.08] rounded-xl overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab("notes")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === "notes"
+                ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.1]"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Notas & Slugs</span>
+            <span className="px-1.5 py-0.2 rounded-md bg-white/[0.06] text-[10px] font-mono-code">
+              {activeNotes.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("vault")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === "vault"
+                ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.1]"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5 text-[#F59E0B]" />
+            <span>Bóveda de Inteligencia</span>
+            <span className="px-1.5 py-0.2 rounded-md bg-[#F59E0B]/15 text-[#F59E0B] text-[10px] font-mono-code font-bold">
+              {globalScan.cards.length + globalScan.passwords.length + globalScan.proxies.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("payments")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === "payments"
+                ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.1]"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Órdenes OxaPay</span>
+            {payments.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-mono-code">
+                {payments.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("messages")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === "messages"
+                ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.1]"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Mensajes & DMCA</span>
+            {messages.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-md bg-white/[0.06] text-[10px] font-mono-code">
+                {messages.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("logs")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === "logs"
+                ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.1]"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>Auditoría & Logs</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("settings")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ml-auto ${
+              activeTab === "settings"
+                ? "bg-white/[0.1] text-white shadow-sm border border-white/[0.1]"
+                : "text-zinc-400 hover:text-white"
+            }`}
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>Configuración</span>
+          </button>
+        </div>
+
+        {/* TAB 1: NOTAS & SLUGS */}
         {activeTab === "notes" && (
-          <div className="space-y-4">
-            {/* Quick Summary Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="flex flex-col gap-4">
+            
+            {/* Filter Pills Ribbon */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
               <button
                 type="button"
                 onClick={() => setStatusFilter("all")}
-                className={`pf-panel p-4 text-left transition-all ${statusFilter === "all" ? "border-[#FF9F0A]" : ""}`}
+                className={`console-card p-3 text-left transition-all ${
+                  statusFilter === "all" ? "border-white/[0.25] bg-white/[0.03]" : ""
+                }`}
               >
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">
-                  Total Notas Activas
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
+                  Todas
                 </span>
-                <span className="text-2xl font-extrabold text-white mt-1 block">{activeNotes.length}</span>
+                <span className="text-lg font-bold text-white mt-0.5 block font-mono-code tabular-nums">
+                  {activeNotes.length}
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setStatusFilter("protected")}
-                className={`pf-panel p-4 text-left transition-all ${statusFilter === "protected" ? "border-[#FF6961]" : ""}`}
+                className={`console-card p-3 text-left transition-all ${
+                  statusFilter === "protected" ? "border-rose-500/50 bg-rose-500/5" : ""
+                }`}
               >
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#FF6961] block">
-                  Con Contraseña 🔒
+                <div className="flex items-center justify-between text-rose-400">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Con Clave</span>
+                  <Lock className="w-3 h-3" />
+                </div>
+                <span className="text-lg font-bold text-rose-400 mt-0.5 block font-mono-code tabular-nums">
+                  {protectedNotesList.length}
                 </span>
-                <span className="text-2xl font-extrabold text-[#FF6961] mt-1 block">{protectedNotesList.length}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setStatusFilter("public")}
-                className={`pf-panel p-4 text-left transition-all ${statusFilter === "public" ? "border-[#30D158]" : ""}`}
+                className={`console-card p-3 text-left transition-all ${
+                  statusFilter === "public" ? "border-emerald-500/50 bg-emerald-500/5" : ""
+                }`}
               >
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#30D158] block">
-                  Públicas Abiertas 🌐
-                </span>
-                <span className="text-2xl font-extrabold text-[#30D158] mt-1 block">
+                <div className="flex items-center justify-between text-emerald-400">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Públicas</span>
+                  <Globe className="w-3 h-3" />
+                </div>
+                <span className="text-lg font-bold text-emerald-400 mt-0.5 block font-mono-code tabular-nums">
                   {activeNotes.length - protectedNotesList.length}
                 </span>
               </button>
@@ -828,25 +961,31 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setStatusFilter("sensitive")}
-                className={`pf-panel p-4 text-left transition-all ${statusFilter === "sensitive" ? "border-[#FF9F0A]" : ""}`}
+                className={`console-card p-3 text-left transition-all ${
+                  statusFilter === "sensitive" ? "border-[#F59E0B]/50 bg-[#F59E0B]/5" : ""
+                }`}
               >
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#FF9F0A] block">
-                  Con Datos / Tarjetas 💳
-                </span>
-                <span className="text-2xl font-extrabold text-[#FF9F0A] mt-1 block">
-                  {activeNotes.filter((n) => (globalScan.bySlug[n.slug]?.totalFindings || 0) > 0).length}
+                <div className="flex items-center justify-between text-[#F59E0B]">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Con Hallazgos</span>
+                  <Shield className="w-3 h-3" />
+                </div>
+                <span className="text-lg font-bold text-[#F59E0B] mt-0.5 block font-mono-code tabular-nums">
+                  {sensitiveNotesCount}
                 </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setStatusFilter("pinned")}
-                className={`pf-panel p-4 text-left transition-all ${statusFilter === "pinned" ? "border-[#FF9F0A]" : ""}`}
+                className={`console-card p-3 text-left transition-all ${
+                  statusFilter === "pinned" ? "border-white/[0.25] bg-white/[0.03]" : ""
+                }`}
               >
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">
-                  Notas Fijadas 📌
-                </span>
-                <span className="text-2xl font-extrabold text-white mt-1 block">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Fijadas</span>
+                  <Pin className="w-3 h-3 text-[#F59E0B]" />
+                </div>
+                <span className="text-lg font-bold text-white mt-0.5 block font-mono-code tabular-nums">
                   {activeNotes.filter((n) => n.is_pinned).length}
                 </span>
               </button>
@@ -854,425 +993,392 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setStatusFilter("trash")}
-                className={`pf-panel p-4 text-left transition-all ${statusFilter === "trash" ? "border-red-500" : ""}`}
+                className={`console-card p-3 text-left transition-all ${
+                  statusFilter === "trash" ? "border-rose-500/50 bg-rose-500/5" : ""
+                }`}
               >
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">
-                  Papelera 🗑️
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider">Papelera</span>
+                  <Trash2 className="w-3 h-3" />
+                </div>
+                <span className="text-lg font-bold text-zinc-400 mt-0.5 block font-mono-code tabular-nums">
+                  {trashedNotes.length}
                 </span>
-                <span className="text-2xl font-extrabold text-gray-300 mt-1 block">{trashedNotes.length}</span>
               </button>
             </div>
 
-            {/* Filter & Search Toolbar */}
-            <div className="pf-panel p-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-              {/* Search Box */}
+            {/* Toolbar */}
+            <div className="console-card p-3 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  aria-label="Buscar por slug, contenido, contraseña de nota o IP"
-                  placeholder="Buscar por /slug, texto dentro de la nota, contraseña de bloqueo o IP..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-[#0E0E11] border border-white/[0.1] rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-gray-500 font-mono-code focus:border-[#FF9F0A]"
+                  placeholder="Buscar por slug, contraseña, contenido o IP..."
+                  className="w-full bg-[#0D0E10] border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-[#F59E0B] focus:outline-none"
                 />
               </div>
 
-              {/* Controls */}
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  aria-label="Filtrar notas por estado"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-[#0E0E11] border border-white/[0.1] rounded-xl px-3 py-2.5 text-xs font-bold text-white"
-                >
-                  <option value="all">Todas las activas ({activeNotes.length})</option>
-                  <option value="protected">Protegidas con Contraseña ({protectedNotesList.length})</option>
-                  <option value="public">Públicas ({activeNotes.length - protectedNotesList.length})</option>
-                  <option value="sensitive">Con Tarjetas / Claves Detectadas</option>
-                  <option value="pinned">Fijadas (Pinned)</option>
-                  <option value="trash">Papelera ({trashedNotes.length})</option>
-                </select>
-
-                <select
-                  aria-label="Ordenar notas"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-[#0E0E11] border border-white/[0.1] rounded-xl px-3 py-2.5 text-xs font-bold text-white"
-                >
-                  <option value="updated_desc">Más recientes</option>
-                  <option value="created_desc">Fecha de creación</option>
-                  <option value="views_desc">Más vistas</option>
-                  <option value="size_desc">Mayor tamaño</option>
-                  <option value="slug_asc">Slug (A-Z)</option>
-                </select>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-[#0D0E10] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs">
+                  <ArrowUpDown className="w-3 h-3 text-zinc-500" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-transparent text-xs text-zinc-300 focus:outline-none"
+                  >
+                    <option value="updated_desc" className="bg-[#111113]">Recientes primero</option>
+                    <option value="created_desc" className="bg-[#111113]">Fecha creación</option>
+                    <option value="views_desc" className="bg-[#111113]">Más vistas</option>
+                    <option value="size_desc" className="bg-[#111113]">Mayor tamaño</option>
+                    <option value="slug_asc" className="bg-[#111113]">Slug A-Z</option>
+                  </select>
+                </div>
 
                 <button
                   type="button"
                   onClick={() => setShowPasswordsPlain(!showPasswordsPlain)}
-                  className={`px-3.5 py-2.5 rounded-xl text-xs font-extrabold border flex items-center gap-1.5 transition-colors ${
-                    showPasswordsPlain
-                      ? "bg-[#FF9F0A]/15 border-[#FF9F0A]/40 text-[#FF9F0A]"
-                      : "bg-[#0E0E11] border-white/[0.1] text-gray-400"
-                  }`}
+                  className="console-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
                 >
-                  {showPasswordsPlain ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  <span>{showPasswordsPlain ? "Claves Visibles" : "Claves Ocultas"}</span>
+                  {showPasswordsPlain ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  <span>{showPasswordsPlain ? "Ocultar Claves" : "Ver Claves"}</span>
                 </button>
               </div>
             </div>
 
-            {/* Bulk Actions Bar when items are selected */}
+            {/* Bulk Action Bar */}
             {selectedSlugs.length > 0 && (
-              <div className="pf-panel p-3.5 bg-[#1B1710] border-[#FF9F0A]/40 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs font-extrabold text-[#FF9F0A]">
-                  <CheckSquare className="w-4 h-4" />
+              <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.12] flex flex-wrap items-center justify-between gap-3 animate-fade-in">
+                <div className="flex items-center gap-2 text-xs font-semibold text-white">
+                  <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
                   <span>{selectedSlugs.length} nota(s) seleccionada(s)</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSlugs([])}
+                    className="text-xs text-zinc-400 hover:text-white underline ml-2"
+                  >
+                    Deseleccionar
+                  </button>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={actionLoading}
-                    onClick={() => executeBulkAction("unlock")}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-[#30D158] border border-emerald-500/30 text-xs font-extrabold flex items-center gap-1.5"
-                  >
-                    <Unlock className="w-3.5 h-3.5" />
-                    <span>Quitar Contraseñas (Desbloquear)</span>
-                  </button>
-
-                  <div className="flex items-center gap-1 bg-[#0E0E11] border border-white/[0.1] rounded-xl px-2 py-1">
+                  <div className="flex items-center gap-1.5">
                     <input
                       type="text"
-                      placeholder="Nueva clave grupal..."
                       value={bulkPassword}
                       onChange={(e) => setBulkPassword(e.target.value)}
-                      className="bg-transparent text-xs text-white font-mono-code px-2 py-0.5 focus:outline-none w-36"
+                      placeholder="Nueva clave común..."
+                      className="bg-[#0D0E10] border border-white/[0.1] rounded-lg px-2.5 py-1 text-xs text-white font-mono-code focus:outline-none"
                     />
                     <button
                       type="button"
                       disabled={actionLoading}
                       onClick={() => executeBulkAction("lock")}
-                      className="px-2.5 py-1 rounded-lg bg-[#FF9F0A] text-black text-[11px] font-extrabold"
+                      className="console-btn-primary px-2.5 py-1 text-xs"
                     >
-                      Bloquear
+                      Bloquear Selección
                     </button>
                   </div>
 
+                  <button
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() => executeBulkAction("unlock")}
+                    className="console-btn-secondary px-2.5 py-1 text-xs text-emerald-400"
+                  >
+                    Desbloquear
+                  </button>
+
                   {statusFilter === "trash" ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => executeBulkAction("restore")}
-                        className="pf-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5 text-[#30D158]" />
-                        <span>Restaurar</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => executeBulkAction("permanent_delete")}
-                        className="px-3 py-1.5 rounded-xl bg-red-500/20 text-[#FF6961] border border-red-500/30 text-xs font-extrabold"
-                      >
-                        Eliminar Definitivo
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={() => executeBulkAction("restore")}
+                      className="console-btn-secondary px-2.5 py-1 text-xs"
+                    >
+                      Restaurar
+                    </button>
                   ) : (
                     <button
                       type="button"
-                      onClick={() => executeBulkAction("delete")}
-                      className="px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-[#FF6961] border border-red-500/30 text-xs font-extrabold flex items-center gap-1"
+                      disabled={actionLoading}
+                      onClick={() => executeBulkAction("trash")}
+                      className="console-btn-danger px-2.5 py-1 text-xs"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Papelera</span>
+                      Mover a Papelera
                     </button>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Master Notes Table */}
-            <div className="pf-panel overflow-hidden">
+            {/* Notes Table */}
+            <div className="console-card overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#0E0E11] border-b border-white/[0.08] text-gray-400 font-extrabold uppercase text-[10px] tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3.5 w-10">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/[0.08] bg-white/[0.02] text-zinc-400 text-[11px] font-semibold uppercase tracking-wider">
+                      <th className="py-3 px-4 w-10">
                         <button
                           type="button"
                           onClick={toggleSelectAllFiltered}
-                          aria-label="Seleccionar todas las notas"
-                          className="text-gray-400 hover:text-white"
+                          aria-label="Seleccionar todas"
+                          className="text-zinc-400 hover:text-white"
                         >
-                          {selectedSlugs.length === filteredNotes.length && filteredNotes.length > 0 ? (
-                            <CheckSquare className="w-4 h-4 text-[#FF9F0A]" />
+                          {selectedSlugs.length > 0 && selectedSlugs.length === filteredNotes.length ? (
+                            <CheckSquare className="w-4 h-4 text-[#F59E0B]" />
                           ) : (
                             <Square className="w-4 h-4" />
                           )}
                         </button>
                       </th>
-                      <th className="px-4 py-3.5">Nota / Slug</th>
-                      <th className="px-4 py-3.5">Contraseña de la Nota</th>
-                      <th className="px-4 py-3.5">Contenido Completo & Datos Detectados</th>
-                      <th className="px-4 py-3.5">Métricas & Fecha</th>
-                      <th className="px-4 py-3.5 text-right">Acciones Admin</th>
+                      <th className="py-3 px-4 min-w-[180px]">Slug / Identificador</th>
+                      <th className="py-3 px-4 min-w-[220px]">Contraseña</th>
+                      <th className="py-3 px-4 min-w-[280px]">Contenido & Hallazgos</th>
+                      <th className="py-3 px-4 min-w-[140px]">Telemetría</th>
+                      <th className="py-3 px-4 text-right min-w-[140px]">Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.05]">
-                    {filteredNotes.map((note) => {
-                      const scan = globalScan.bySlug[note.slug] || { counts: {}, totalFindings: 0 };
-                      const isSelected = selectedSlugs.includes(note.slug);
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {filteredNotes.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-zinc-500 text-xs">
+                          No se encontraron notas con el filtro seleccionado.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredNotes.map((note) => {
+                        const isSelected = selectedSlugs.includes(note.slug);
+                        const scan = globalScan.bySlug[note.slug] || { counts: {}, totalFindings: 0 };
 
-                      return (
-                        <tr
-                          key={note.id || note.slug}
-                          className={`hover:bg-white/[0.025] transition-colors ${
-                            note.is_pinned ? "bg-[#FF9F0A]/[0.03]" : ""
-                          }`}
-                        >
-                          {/* Checkbox */}
-                          <td className="px-4 py-4 align-top">
-                            <button
-                              type="button"
-                              onClick={() => toggleSelectSlug(note.slug)}
-                              aria-label={`Seleccionar nota ${note.slug}`}
-                              className="text-gray-500 hover:text-white mt-0.5"
-                            >
-                              {isSelected ? (
-                                <CheckSquare className="w-4 h-4 text-[#FF9F0A]" />
-                              ) : (
-                                <Square className="w-4 h-4" />
-                              )}
-                            </button>
-                          </td>
+                        return (
+                          <tr
+                            key={note.slug}
+                            className={`hover:bg-white/[0.02] transition-colors ${
+                              isSelected ? "bg-white/[0.03]" : ""
+                            }`}
+                          >
+                            <td className="py-3 px-4 align-top">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelectSlug(note.slug)}
+                                className="w-3.5 h-3.5 rounded accent-[#F59E0B] cursor-pointer mt-1"
+                              />
+                            </td>
 
-                          {/* Slug & Quick Info */}
-                          <td className="px-4 py-4 align-top whitespace-nowrap">
-                            <div className="flex items-center gap-2 font-mono-code">
-                              {note.is_pinned && (
-                                <Pin className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" title="Nota fijada" />
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => setInspectingNote(note)}
-                                className="text-sm font-bold text-[#FF9F0A] hover:underline text-left"
-                              >
-                                /{note.slug}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleCopy(`${PUBLIC_SITE_ORIGIN}/${note.slug}`, `url-${note.slug}`)}
-                                title="Copiar enlace de la nota"
-                                className="text-gray-500 hover:text-white p-1"
-                              >
-                                {copiedId === `url-${note.slug}` ? (
-                                  <Check className="w-3.5 h-3.5 text-[#30D158]" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5" />
+                            {/* Slug Column */}
+                            <td className="py-3 px-4 align-top">
+                              <div className="flex items-center gap-1.5">
+                                {note.is_pinned && (
+                                  <Pin className="w-3 h-3 text-[#F59E0B] shrink-0" title="Nota Fijada" />
                                 )}
-                              </button>
-                            </div>
-                            <div className="text-[11px] text-gray-500 font-mono-code mt-1 flex items-center gap-2">
-                              <span>IP: {note.last_ip || "local"}</span>
-                            </div>
-                            {note.admin_notes && (
-                              <div className="mt-1.5 inline-block px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] text-amber-300 font-semibold">
-                                📌 {note.admin_notes}
-                              </div>
-                            )}
-                          </td>
-
-                          {/* Password Column (Plaintext + Copy + Unlock/Edit) */}
-                          <td className="px-4 py-4 align-top whitespace-nowrap">
-                            {note.has_password ? (
-                              <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="pf-pill pf-pill-danger">
-                                    <Lock className="w-3 h-3" />
-                                    Protegida
-                                  </span>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUnlockNote(note.slug)}
-                                    title="Quitar contraseña inmediatamente (Desbloquear)"
-                                    className="px-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-[#30D158] border border-emerald-500/30 text-[10px] font-extrabold flex items-center gap-1"
-                                  >
-                                    <Unlock className="w-2.5 h-2.5" />
-                                    <span>Desbloquear</span>
-                                  </button>
-                                </div>
-
-                                {/* Actual Note Password */}
-                                <div className="flex items-center gap-1.5 bg-[#0E0E11] border border-[#FF9F0A]/30 rounded-xl px-2.5 py-1.5 max-w-[260px]">
-                                  <KeyRound className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" />
-                                  {note.password_plain ? (
-                                    <>
-                                      <span className="font-mono-code text-xs font-bold text-white truncate">
-                                        {showPasswordsPlain ? note.password_plain : "••••••••••"}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleCopy(note.password_plain, `pwd-${note.slug}`)}
-                                        title="Copiar contraseña en texto plano"
-                                        className="ml-auto text-gray-400 hover:text-white p-1 shrink-0"
-                                      >
-                                        {copiedId === `pwd-${note.slug}` ? (
-                                          <Check className="w-3.5 h-3.5 text-[#30D158]" />
-                                        ) : (
-                                          <Copy className="w-3.5 h-3.5" />
-                                        )}
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => setPasswordModalNote(note)}
-                                      className="text-[11px] text-amber-300 hover:underline truncate text-left"
-                                      title={note.password_hash}
-                                    >
-                                      Hash Bcrypt (Clic para cambiar clave)
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-start gap-1.5">
-                                <span className="pf-pill pf-pill-ok">
-                                  <Globe className="w-3 h-3" />
-                                  Pública (Sin clave)
+                                <span className="font-mono-code font-bold text-white text-xs">
+                                  /{note.slug}
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => setPasswordModalNote(note)}
-                                  className="text-[11px] font-bold text-gray-400 hover:text-[#FF9F0A] flex items-center gap-1"
+                                  onClick={() => handleCopy(note.slug, `slug-${note.slug}`)}
+                                  className="text-zinc-500 hover:text-white p-0.5"
+                                  title="Copiar slug"
                                 >
-                                  <Lock className="w-3 h-3" />
-                                  <span>+ Asignar contraseña</span>
+                                  {copiedId === `slug-${note.slug}` ? (
+                                    <Check className="w-3 h-3 text-emerald-400" />
+                                  ) : (
+                                    <Copy className="w-3 h-3" />
+                                  )}
                                 </button>
+                                <a
+                                  href={`${PUBLIC_SITE_ORIGIN}/${note.slug}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-zinc-500 hover:text-zinc-300 p-0.5"
+                                  title="Abrir nota pública"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
                               </div>
-                            )}
-                          </td>
 
-                          {/* Full Content Preview & Detected Patterns */}
-                          <td className="px-4 py-4 align-top max-w-md">
-                            <div
-                              onClick={() => setInspectingNote(note)}
-                              className="cursor-pointer bg-[#0E0E11] hover:bg-[#16161A] border border-white/[0.06] rounded-xl p-2.5 font-mono-code text-xs text-gray-300 line-clamp-3 whitespace-pre-wrap break-words transition-colors"
-                            >
-                              {note.content ? (
-                                note.content.slice(0, 220) + (note.content.length > 220 ? "..." : "")
-                              ) : (
-                                <span className="text-gray-600 italic">Nota vacía</span>
+                              <div className="text-[10px] text-zinc-500 font-mono-code mt-1">
+                                IP: {note.last_ip || "local"}
+                              </div>
+
+                              {note.admin_notes && (
+                                <div className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300">
+                                  <Pin className="w-2.5 h-2.5" />
+                                  <span>{note.admin_notes}</span>
+                                </div>
                               )}
-                            </div>
+                            </td>
 
-                            {/* Pattern Badges */}
-                            {scan.totalFindings > 0 && (
-                              <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                                {scan.counts.cards > 0 && (
-                                  <span className="px-2 py-0.5 rounded-md bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 text-[#FF9F0A] text-[10px] font-extrabold">
-                                    💳 {scan.counts.cards} Tarjeta(s)
-                                  </span>
-                                )}
-                                {scan.counts.passwords > 0 && (
-                                  <span className="px-2 py-0.5 rounded-md bg-red-500/15 border border-red-500/30 text-[#FF6961] text-[10px] font-extrabold">
-                                    🔑 {scan.counts.passwords} Clave(s) en texto
-                                  </span>
-                                )}
-                                {scan.counts.users > 0 && (
-                                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[#30D158] text-[10px] font-extrabold">
-                                    👤 {scan.counts.users} Usuario(s)
-                                  </span>
-                                )}
-                                {scan.counts.proxies > 0 && (
-                                  <span className="px-2 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[10px] font-extrabold">
-                                    🌐 {scan.counts.proxies} Proxy(s)
-                                  </span>
-                                )}
-                                {(scan.counts.crypto > 0 || scan.counts.keys > 0) && (
-                                  <span className="px-2 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/30 text-sky-300 text-[10px] font-extrabold">
-                                    ⚡ {scan.counts.crypto + scan.counts.keys} Crypto/Keys
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </td>
+                            {/* Password Column */}
+                            <td className="py-3 px-4 align-top">
+                              {note.has_password ? (
+                                <div className="flex flex-col gap-1.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="console-badge console-badge-rose text-[10px]">
+                                      <Lock className="w-2.5 h-2.5" />
+                                      Protegida
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUnlockNote(note.slug)}
+                                      className="text-[10px] font-semibold text-emerald-400 hover:underline"
+                                    >
+                                      Desbloquear
+                                    </button>
+                                  </div>
 
-                          {/* Metrics & Timestamp */}
-                          <td className="px-4 py-4 align-top whitespace-nowrap font-mono-code text-[11px] text-gray-400">
-                            <div className="text-white font-bold">
-                              {(note.size_bytes || 0).toLocaleString()} B · {note.line_count || 0} lín.
-                            </div>
-                            <div>👁️ {note.views_count || 0} vistas</div>
-                            <div className="text-gray-500 mt-1">
-                              {new Date(note.updated_at || note.created_at).toLocaleString()}
-                            </div>
-                          </td>
+                                  <div className="flex items-center justify-between bg-[#0D0E10] border border-white/[0.08] rounded-lg px-2.5 py-1 max-w-[220px]">
+                                    <div className="flex items-center gap-1.5 min-w-0 pr-1">
+                                      <KeyRound className="w-3 h-3 text-[#F59E0B] shrink-0" />
+                                      <span className="font-mono-code text-xs text-white truncate">
+                                        {note.password_plain
+                                          ? (showPasswordsPlain ? note.password_plain : "••••••••")
+                                          : "Hash Bcrypt"}
+                                      </span>
+                                    </div>
+                                    {note.password_plain && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopy(note.password_plain, `pwd-${note.slug}`)}
+                                        className="text-zinc-500 hover:text-white p-0.5"
+                                        title="Copiar contraseña"
+                                      >
+                                        {copiedId === `pwd-${note.slug}` ? (
+                                          <Check className="w-3 h-3 text-emerald-400" />
+                                        ) : (
+                                          <Copy className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-start gap-1">
+                                  <span className="console-badge console-badge-emerald text-[10px]">
+                                    <Globe className="w-2.5 h-2.5" />
+                                    Pública
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setPasswordModalNote(note)}
+                                    className="text-[11px] text-zinc-400 hover:text-[#F59E0B] flex items-center gap-1"
+                                  >
+                                    <Lock className="w-3 h-3" />
+                                    <span>Asignar clave</span>
+                                  </button>
+                                </div>
+                              )}
+                            </td>
 
-                          {/* Actions */}
-                          <td className="px-4 py-4 align-top text-right whitespace-nowrap">
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                type="button"
+                            {/* Content & Intelligence Column */}
+                            <td className="py-3 px-4 align-top max-w-sm">
+                              <div
                                 onClick={() => setInspectingNote(note)}
-                                className="pf-btn-primary px-3 py-1.5 text-xs font-extrabold flex items-center gap-1"
+                                className="cursor-pointer bg-[#0D0E10] hover:bg-[#141416] border border-white/[0.06] rounded-lg p-2 font-mono-code text-xs text-zinc-300 line-clamp-2 break-words transition-colors"
                               >
-                                <Eye className="w-3.5 h-3.5" />
-                                <span>Ver / Editar</span>
-                              </button>
+                                {note.content ? note.content.slice(0, 180) : <span className="text-zinc-600 italic">Vacía</span>}
+                              </div>
 
-                              <button
-                                type="button"
-                                onClick={() => setPasswordModalNote(note)}
-                                title="Gestionar contraseña de esta nota"
-                                className="pf-btn-secondary p-2 text-xs text-[#FF9F0A]"
-                              >
-                                <KeyRound className="w-3.5 h-3.5" />
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleTogglePin(note)}
-                                title={note.is_pinned ? "Desfijar nota" : "Fijar nota"}
-                                className={`pf-btn-secondary p-2 text-xs ${
-                                  note.is_pinned ? "text-[#FF9F0A] border-[#FF9F0A]/40" : "text-gray-400"
-                                }`}
-                              >
-                                <Pin className="w-3.5 h-3.5" />
-                              </button>
-
-                              {note.is_deleted ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRestoreNote(note.slug)}
-                                  title="Restaurar nota"
-                                  className="p-2 rounded-xl bg-emerald-500/15 text-[#30D158] border border-emerald-500/30"
-                                >
-                                  <RotateCcw className="w-3.5 h-3.5" />
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteNote(note.slug, false)}
-                                  title="Enviar a la papelera"
-                                  className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-[#FF6961] border border-red-500/20"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                              {scan.totalFindings > 0 && (
+                                <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                                  {scan.counts.cards > 0 && (
+                                    <span className="console-badge console-badge-amber text-[10px]">
+                                      <CreditCard className="w-2.5 h-2.5" />
+                                      {scan.counts.cards} Tarjeta(s)
+                                    </span>
+                                  )}
+                                  {scan.counts.passwords > 0 && (
+                                    <span className="console-badge console-badge-rose text-[10px]">
+                                      <KeyRound className="w-2.5 h-2.5" />
+                                      {scan.counts.passwords} Clave(s)
+                                    </span>
+                                  )}
+                                  {scan.counts.users > 0 && (
+                                    <span className="console-badge console-badge-emerald text-[10px]">
+                                      <User className="w-2.5 h-2.5" />
+                                      {scan.counts.users} User(s)
+                                    </span>
+                                  )}
+                                  {scan.counts.proxies > 0 && (
+                                    <span className="console-badge console-badge-purple text-[10px]">
+                                      <Globe className="w-2.5 h-2.5" />
+                                      {scan.counts.proxies} Proxy
+                                    </span>
+                                  )}
+                                </div>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                            </td>
 
-                    {filteredNotes.length === 0 && (
-                      <tr>
-                        <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                          No se encontraron notas con los filtros seleccionados.
-                        </td>
-                      </tr>
+                            {/* Telemetry Column */}
+                            <td className="py-3 px-4 align-top font-mono-code text-[11px] text-zinc-400 whitespace-nowrap">
+                              <div className="text-white font-medium">
+                                {(note.size_bytes || 0).toLocaleString()} B
+                              </div>
+                              <div className="flex items-center gap-1 text-zinc-400 mt-0.5">
+                                <Eye className="w-3 h-3 text-zinc-500" />
+                                <span>{note.views_count || 0} vistas</span>
+                              </div>
+                              <div className="text-zinc-500 text-[10px] mt-0.5">
+                                {new Date(note.updated_at || note.created_at).toLocaleDateString()}
+                              </div>
+                            </td>
+
+                            {/* Actions Column */}
+                            <td className="py-3 px-4 align-top text-right whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectingNote(note)}
+                                  className="console-btn-primary px-2.5 py-1 text-xs"
+                                >
+                                  Editar
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setPasswordModalNote(note)}
+                                  className="console-btn-secondary p-1"
+                                  title="Gestionar contraseña"
+                                >
+                                  <KeyRound className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleTogglePin(note)}
+                                  className="console-btn-secondary p-1"
+                                  title={note.is_pinned ? "Desfijar" : "Fijar nota"}
+                                >
+                                  <Pin className={`w-3.5 h-3.5 ${note.is_pinned ? "text-[#F59E0B]" : ""}`} />
+                                </button>
+
+                                {note.is_deleted ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRestoreNote(note.slug)}
+                                    className="console-btn-secondary p-1 text-emerald-400"
+                                    title="Restaurar de papelera"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteNote(note.slug, false)}
+                                    className="console-btn-secondary p-1 hover:text-rose-400"
+                                    title="Enviar a papelera"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -1281,493 +1387,276 @@ export default function App() {
           </div>
         )}
 
-        {/* =========================================================
-            TAB 2: DASHBOARD & RESUMEN GENERAL
-           ========================================================= */}
-        {activeTab === "dashboard" && (
-          <div className="space-y-6">
-            {/* KPI Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="pf-panel p-5">
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                  <span className="font-extrabold uppercase tracking-wider">Total de Notas</span>
-                  <FileText className="w-4 h-4 text-[#FF9F0A]" />
-                </div>
-                <div className="text-3xl font-extrabold text-white">{stats.total_notes}</div>
-                <div className="text-[11px] text-gray-500 font-mono-code mt-1">
-                  {stats.protected_notes} protegidas · {stats.public_notes} públicas
-                </div>
-              </div>
-
-              <div className="pf-panel p-5">
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                  <span className="font-extrabold uppercase tracking-wider">Contraseñas de Notas</span>
-                  <KeyRound className="w-4 h-4 text-[#FF6961]" />
-                </div>
-                <div className="text-3xl font-extrabold text-[#FF6961]">{protectedNotesList.length}</div>
-                <div className="text-[11px] text-gray-500 font-mono-code mt-1">
-                  +{globalScan.passwords.length} claves detectadas dentro del texto
-                </div>
-              </div>
-
-              <div className="pf-panel p-5">
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                  <span className="font-extrabold uppercase tracking-wider">Ingresos Desbloqueos BTC</span>
-                  <DollarSign className="w-4 h-4 text-[#30D158]" />
-                </div>
-                <div className="text-3xl font-extrabold text-[#30D158]">
-                  ${(stats.total_revenue || 0).toLocaleString()} <span className="text-xs text-gray-400">USD</span>
-                </div>
-                <div className="text-[11px] text-gray-500 font-mono-code mt-1">
-                  {stats.paid_unlocks} pagados · {stats.pending_payments} pendientes
-                </div>
-              </div>
-
-              <div className="pf-panel p-5">
-                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                  <span className="font-extrabold uppercase tracking-wider">Tráfico & Almacenamiento</span>
-                  <Database className="w-4 h-4 text-[#FF9F0A]" />
-                </div>
-                <div className="text-3xl font-extrabold text-white">
-                  {(stats.total_views || 0).toLocaleString()} <span className="text-xs text-gray-400">vistas</span>
-                </div>
-                <div className="text-[11px] text-gray-500 font-mono-code mt-1">
-                  {((stats.total_bytes || 0) / 1024).toFixed(2)} KB almacenados en PostgreSQL
-                </div>
-              </div>
-            </div>
-
-            {/* Direct Password Directory Card */}
-            <div className="pf-panel p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                    <KeyRound className="w-4 h-4 text-[#FF9F0A]" />
-                    <span>Directorio Rápido de Notas con Contraseña ({protectedNotesList.length})</span>
-                  </h3>
-                  <p className="text-xs text-gray-400">
-                    Listado directo de todas las notas bloqueadas junto con su contraseña en texto plano y acceso inmediato.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("vault")}
-                  className="pf-btn-secondary px-3.5 py-2 text-xs"
-                >
-                  Abrir Bóveda Completa →
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {protectedNotesList.map((n) => (
-                  <div
-                    key={n.slug}
-                    className="pf-well p-4 flex flex-col justify-between gap-3 border border-white/[0.08]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => setInspectingNote(n)}
-                        className="text-sm font-extrabold text-[#FF9F0A] font-mono-code hover:underline"
-                      >
-                        /{n.slug}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleUnlockNote(n.slug)}
-                        className="text-[11px] font-bold text-[#30D158] hover:underline flex items-center gap-1"
-                      >
-                        <Unlock className="w-3 h-3" />
-                        Desbloquear
-                      </button>
-                    </div>
-
-                    <div className="bg-[#141416] border border-white/[0.06] rounded-xl p-2.5 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-500 block font-bold">
-                          Contraseña:
-                        </span>
-                        <span className="text-xs font-mono-code font-bold text-white break-all">
-                          {n.password_plain || "Hash Bcrypt (Clic en Editar)"}
-                        </span>
-                      </div>
-                      {n.password_plain ? (
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(n.password_plain, `dash-pwd-${n.slug}`)}
-                          className="pf-btn-secondary px-2.5 py-1.5 text-[11px] shrink-0"
-                        >
-                          {copiedId === `dash-pwd-${n.slug}` ? "Copiada" : "Copiar"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setPasswordModalNote(n)}
-                          className="pf-btn-secondary px-2.5 py-1.5 text-[11px] shrink-0 text-[#FF9F0A]"
-                        >
-                          Asignar
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="text-[11px] text-gray-400 font-mono-code truncate">
-                      {n.content || "Sin contenido"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* =========================================================
-            TAB 3: BÓVEDA DE CONTRASEÑAS Y DATOS DETECTADOS (VAULT)
-           ========================================================= */}
+        {/* TAB 2: BÓVEDA DE INTELIGENCIA */}
         {activeTab === "vault" && (
-          <div className="space-y-4">
-            <div className="pf-panel p-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="console-card p-6 flex flex-col gap-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
               <div>
-                <h2 className="text-lg font-extrabold text-white">
-                  Bóveda Central de Contraseñas, Tarjetas y Credenciales
+                <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-[#F59E0B]" />
+                  <span>Bóveda de Inteligencia y Datos Extraídos</span>
                 </h2>
-                <p className="text-xs text-gray-400">
-                  Extracción automática en tiempo real de todas las contraseñas de notas y datos sensibles almacenados en Notepad.do.
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Análisis global heurístico y algorítmico de credenciales, tarjetas Luhn y proxies.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { id: "note_locks", label: `Claves de Notas (${globalScan.noteLocks.length})` },
-                  { id: "text_passwords", label: `Claves en Texto (${globalScan.passwords.length})` },
-                  { id: "cards", label: `Tarjetas CC (${globalScan.cards.length})` },
-                  { id: "users", label: `Usuarios/Emails (${globalScan.users.length})` },
-                  { id: "proxies", label: `Proxies (${globalScan.proxies.length})` },
-                  { id: "crypto_keys", label: `Crypto & API Keys (${globalScan.crypto.length + globalScan.keys.length})` }
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setVaultTab(t.id)}
-                    className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all ${
-                      vaultTab === t.id
-                        ? "bg-[#FF9F0A] text-black"
-                        : "bg-[#0E0E11] text-gray-400 hover:text-white border border-white/[0.06]"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allCardsText = globalScan.cards.map((c) => `${c.slug}: ${c.digits}|${c.exp || ""}|${c.cvv || ""}`).join("\n");
+                    handleCopy(allCardsText, "all-vault-cards");
+                  }}
+                  className="console-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
+                >
+                  <CreditCard className="w-3.5 h-3.5 text-[#F59E0B]" />
+                  <span>Copiar Tarjetas</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allPwds = activeNotes.filter((n) => n.password_plain).map((n) => `/${n.slug} -> ${n.password_plain}`).join("\n");
+                    handleCopy(allPwds, "all-vault-pwds");
+                  }}
+                  className="console-btn-secondary px-3 py-1.5 text-xs flex items-center gap-1.5"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Copiar Claves</span>
+                </button>
               </div>
             </div>
 
-            <div className="pf-panel overflow-hidden">
-              {vaultTab === "note_locks" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-[#0E0E11] border-b border-white/[0.08] text-gray-400 uppercase text-[10px] font-extrabold">
-                      <tr>
-                        <th className="px-6 py-3.5">Nota (/slug)</th>
-                        <th className="px-6 py-3.5">Contraseña en Texto Plano</th>
-                        <th className="px-6 py-3.5">Hash Bcrypt Almacenado</th>
-                        <th className="px-6 py-3.5 text-right">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] font-mono-code">
-                      {globalScan.noteLocks.map((item, idx) => (
-                        <tr key={idx} className="hover:bg-white/[0.02]">
-                          <td className="px-6 py-4 text-[#FF9F0A] font-bold">/{item.slug}</td>
-                          <td className="px-6 py-4">
-                            {item.password_plain ? (
-                              <span className="px-2.5 py-1 rounded-lg bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 text-white font-bold">
-                                {item.password_plain}
-                              </span>
-                            ) : (
-                              <span className="text-amber-300/80 italic">Sólo Hash Bcrypt</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-gray-500 max-w-xs truncate">{item.password_hash}</td>
-                          <td className="px-6 py-4 text-right space-x-2">
-                            {item.password_plain && (
-                              <button
-                                type="button"
-                                onClick={() => handleCopy(item.password_plain, `vl-pwd-${idx}`)}
-                                className="pf-btn-secondary px-3 py-1.5 text-xs"
-                              >
-                                {copiedId === `vl-pwd-${idx}` ? "Copiada" : "Copiar Clave"}
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const found = notes.find((n) => n.slug === item.slug);
-                                if (found) setPasswordModalNote(found);
-                              }}
-                              className="pf-btn-secondary px-3 py-1.5 text-xs text-[#FF9F0A]"
-                            >
-                              Cambiar / Desbloquear
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            {/* Sub-tabs */}
+            <div className="flex items-center gap-1.5 p-1 bg-[#0D0E10] border border-white/[0.08] rounded-xl w-fit">
+              <button
+                type="button"
+                onClick={() => setVaultTab("note_locks")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  vaultTab === "note_locks" ? "bg-white/[0.1] text-white" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Claves de Notas ({activeNotes.filter((n) => n.password_plain).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setVaultTab("cards")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  vaultTab === "cards" ? "bg-white/[0.1] text-white" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Tarjetas ({globalScan.cards.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setVaultTab("text_passwords")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  vaultTab === "text_passwords" ? "bg-white/[0.1] text-white" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Contraseñas en Texto ({globalScan.passwords.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setVaultTab("users")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  vaultTab === "users" ? "bg-white/[0.1] text-white" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Usuarios & Correos ({globalScan.users.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setVaultTab("proxies")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                  vaultTab === "proxies" ? "bg-white/[0.1] text-white" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Proxies ({globalScan.proxies.length})
+              </button>
+            </div>
 
-              {vaultTab === "text_passwords" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono-code">
-                    <thead className="bg-[#0E0E11] border-b border-white/[0.08] text-gray-400 uppercase text-[10px] font-manrope font-extrabold">
-                      <tr>
-                        <th className="px-6 py-3.5">Nota Origen</th>
-                        <th className="px-6 py-3.5">Contraseña Extraída</th>
-                        <th className="px-6 py-3.5">Línea Original</th>
-                        <th className="px-6 py-3.5 text-right">Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05]">
-                      {globalScan.passwords.map((p, idx) => (
-                        <tr key={idx} className="hover:bg-white/[0.02]">
-                          <td className="px-6 py-3.5 text-[#FF9F0A] font-bold">/{p.slug}</td>
-                          <td className="px-6 py-3.5 text-white font-bold">{p.value}</td>
-                          <td className="px-6 py-3.5 text-gray-400">{p.full}</td>
-                          <td className="px-6 py-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(p.value, `vp-${idx}`)}
-                              className="pf-btn-secondary px-3 py-1 text-xs"
-                            >
-                              {copiedId === `vp-${idx}` ? "Copiada" : "Copiar"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            {/* Vault Content */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {vaultTab === "note_locks" &&
+                activeNotes.filter((n) => n.password_plain).map((n) => (
+                  <div key={n.slug} className="console-well p-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0 pr-2">
+                      <span className="font-mono-code font-bold text-white text-xs block truncate">
+                        /{n.slug}
+                      </span>
+                      <span className="font-mono-code text-xs text-[#F59E0B] font-semibold block truncate">
+                        {n.password_plain}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(n.password_plain, `vlt-pwd-${n.slug}`)}
+                      className="console-btn-secondary px-2.5 py-1 text-xs shrink-0"
+                    >
+                      {copiedId === `vlt-pwd-${n.slug}` ? "Copiada" : "Copiar"}
+                    </button>
+                  </div>
+                ))}
 
-              {vaultTab === "cards" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono-code">
-                    <thead className="bg-[#0E0E11] border-b border-white/[0.08] text-gray-400 uppercase text-[10px] font-manrope font-extrabold">
-                      <tr>
-                        <th className="px-6 py-3.5">Nota Origen</th>
-                        <th className="px-6 py-3.5">Número de Tarjeta</th>
-                        <th className="px-6 py-3.5">Red / Marca</th>
-                        <th className="px-6 py-3.5">Exp / CVV</th>
-                        <th className="px-6 py-3.5">Validación Luhn</th>
-                        <th className="px-6 py-3.5 text-right">Copiar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05]">
-                      {globalScan.cards.map((c, idx) => (
-                        <tr key={idx} className="hover:bg-white/[0.02]">
-                          <td className="px-6 py-3.5 text-[#FF9F0A] font-bold">/{c.slug}</td>
-                          <td className="px-6 py-3.5 text-white font-bold">{c.formatted}</td>
-                          <td className="px-6 py-3.5 text-gray-300">{c.brand}</td>
-                          <td className="px-6 py-3.5 text-gray-300">
-                            {c.exp || "--/--"} · CVV: {c.cvv || "---"}
-                          </td>
-                          <td className="px-6 py-3.5">
-                            <span className={`pf-pill ${c.isValid ? "pf-pill-ok" : "pf-pill-danger"}`}>
-                              {c.isValid ? "Luhn Válida" : "Inválida"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(`${c.digits}|${c.exp || ""}|${c.cvv || ""}`, `vc-${idx}`)}
-                              className="pf-btn-secondary px-3 py-1 text-xs"
-                            >
-                              {copiedId === `vc-${idx}` ? "Copiada" : "Copiar Pipe"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {vaultTab === "cards" &&
+                globalScan.cards.map((c, idx) => (
+                  <div key={idx} className="console-well p-3 flex items-center justify-between gap-2 font-mono-code text-xs">
+                    <div>
+                      <div className="text-white font-medium">{c.formatted}</div>
+                      <div className="text-[10px] text-zinc-400">
+                        {c.brand} · Exp: {c.exp || "—"} · CVV: {c.cvv || "—"} ·{" "}
+                        <span className={c.isValid ? "text-emerald-400" : "text-rose-400"}>
+                          {c.isValid ? "Luhn OK" : "Inválida"}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-zinc-500">Nota: /{c.slug}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(`${c.digits}|${c.exp || ""}|${c.cvv || ""}`, `vlt-c-${idx}`)}
+                      className="console-btn-secondary px-2.5 py-1 text-xs shrink-0"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                ))}
 
-              {vaultTab === "users" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono-code">
-                    <thead className="bg-[#0E0E11] border-b border-white/[0.08] text-gray-400 uppercase text-[10px] font-manrope font-extrabold">
-                      <tr>
-                        <th className="px-6 py-3.5">Nota Origen</th>
-                        <th className="px-6 py-3.5">Usuario / Correo</th>
-                        <th className="px-6 py-3.5 text-right">Copiar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05]">
-                      {globalScan.users.map((u, idx) => (
-                        <tr key={idx} className="hover:bg-white/[0.02]">
-                          <td className="px-6 py-3.5 text-[#FF9F0A] font-bold">/{u.slug}</td>
-                          <td className="px-6 py-3.5 text-white">{u.value}</td>
-                          <td className="px-6 py-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(u.value, `vu-${idx}`)}
-                              className="pf-btn-secondary px-3 py-1 text-xs"
-                            >
-                              {copiedId === `vu-${idx}` ? "Copiado" : "Copiar"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {vaultTab === "text_passwords" &&
+                globalScan.passwords.map((p, idx) => (
+                  <div key={idx} className="console-well p-3 flex items-center justify-between gap-2 font-mono-code text-xs">
+                    <div className="truncate pr-2">
+                      <span className="text-zinc-400">{p.full}</span>
+                      <div className="text-[10px] text-zinc-500">Nota: /{p.slug}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(p.value, `vlt-tp-${idx}`)}
+                      className="console-btn-secondary px-2.5 py-1 text-xs shrink-0"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                ))}
 
-              {vaultTab === "proxies" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono-code">
-                    <thead className="bg-[#0E0E11] border-b border-white/[0.08] text-gray-400 uppercase text-[10px] font-manrope font-extrabold">
-                      <tr>
-                        <th className="px-6 py-3.5">Nota Origen</th>
-                        <th className="px-6 py-3.5">Proxy Completo</th>
-                        <th className="px-6 py-3.5 text-right">Copiar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05]">
-                      {globalScan.proxies.map((pr, idx) => (
-                        <tr key={idx} className="hover:bg-white/[0.02]">
-                          <td className="px-6 py-3.5 text-[#FF9F0A] font-bold">/{pr.slug}</td>
-                          <td className="px-6 py-3.5 text-purple-300">{pr.raw}</td>
-                          <td className="px-6 py-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(pr.raw, `vpr-${idx}`)}
-                              className="pf-btn-secondary px-3 py-1 text-xs"
-                            >
-                              {copiedId === `vpr-${idx}` ? "Copiado" : "Copiar"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {vaultTab === "users" &&
+                globalScan.users.map((u, idx) => (
+                  <div key={idx} className="console-well p-3 flex items-center justify-between gap-2 font-mono-code text-xs">
+                    <div className="truncate pr-2">
+                      <span className="text-white">{u.value}</span>
+                      <div className="text-[10px] text-zinc-500">Nota: /{u.slug}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(u.value, `vlt-u-${idx}`)}
+                      className="console-btn-secondary px-2.5 py-1 text-xs shrink-0"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                ))}
 
-              {vaultTab === "crypto_keys" && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-mono-code">
-                    <thead className="bg-[#0E0E11] border-b border-white/[0.08] text-gray-400 uppercase text-[10px] font-manrope font-extrabold">
-                      <tr>
-                        <th className="px-6 py-3.5">Nota Origen</th>
-                        <th className="px-6 py-3.5">Tipo / Red</th>
-                        <th className="px-6 py-3.5">Dirección / API Token</th>
-                        <th className="px-6 py-3.5 text-right">Copiar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05]">
-                      {globalScan.crypto.map((cr, idx) => (
-                        <tr key={`c-${idx}`} className="hover:bg-white/[0.02]">
-                          <td className="px-6 py-3.5 text-[#FF9F0A] font-bold">/{cr.slug}</td>
-                          <td className="px-6 py-3.5 text-amber-300">{cr.network}</td>
-                          <td className="px-6 py-3.5 text-white">{cr.address}</td>
-                          <td className="px-6 py-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(cr.address, `vcr-${idx}`)}
-                              className="pf-btn-secondary px-3 py-1 text-xs"
-                            >
-                              Copiar
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {globalScan.keys.map((k, idx) => (
-                        <tr key={`k-${idx}`} className="hover:bg-white/[0.02]">
-                          <td className="px-6 py-3.5 text-[#FF9F0A] font-bold">/{k.slug}</td>
-                          <td className="px-6 py-3.5 text-sky-300">{k.type}</td>
-                          <td className="px-6 py-3.5 text-white">{k.key}</td>
-                          <td className="px-6 py-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(k.key, `vk-${idx}`)}
-                              className="pf-btn-secondary px-3 py-1 text-xs"
-                            >
-                              Copiar
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {vaultTab === "proxies" &&
+                globalScan.proxies.map((pr, idx) => (
+                  <div key={idx} className="console-well p-3 flex items-center justify-between gap-2 font-mono-code text-xs">
+                    <span className="text-purple-300 truncate pr-2">{pr.raw}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(pr.raw, `vlt-pr-${idx}`)}
+                      className="console-btn-secondary px-2.5 py-1 text-xs shrink-0"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                ))}
             </div>
           </div>
         )}
 
-        {/* =========================================================
-            TAB 4: PAGOS Y DESBLOQUEOS BITCOIN / OXAPAY
-           ========================================================= */}
+        {/* TAB 3: ÓRDENES OXAPAY */}
         {activeTab === "payments" && (
-          <div className="pf-panel overflow-hidden">
-            <div className="p-5 border-b border-white/[0.08] flex items-center justify-between">
+          <div className="console-card p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
               <div>
-                <h2 className="text-lg font-extrabold text-white">Órdenes de Pago OxaPay (Bitcoin)</h2>
-                <p className="text-xs text-gray-400">
-                  Aprueba pagos manualmente para desbloquear una nota al instante o revisa transacciones completadas.
+                <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  <span>Órdenes de Pago OxaPay</span>
+                </h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Transacciones cripto para desbloqueo de notas protegidas.
                 </p>
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#0E0E11] border-b border-white/[0.08] text-gray-400 uppercase text-[10px] font-extrabold">
-                  <tr>
-                    <th className="px-6 py-3.5">Factura / Track ID</th>
-                    <th className="px-6 py-3.5">Nota Asociada</th>
-                    <th className="px-6 py-3.5">Monto USD</th>
-                    <th className="px-6 py-3.5">Estado</th>
-                    <th className="px-6 py-3.5">Fecha</th>
-                    <th className="px-6 py-3.5 text-right">Acciones</th>
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-white/[0.08] text-zinc-400 text-[11px] font-semibold uppercase tracking-wider">
+                    <th className="py-2.5 px-3">Invoice ID</th>
+                    <th className="py-2.5 px-3">Slug Nota</th>
+                    <th className="py-2.5 px-3">Monto</th>
+                    <th className="py-2.5 px-3">Estado</th>
+                    <th className="py-2.5 px-3">Fecha</th>
+                    <th className="py-2.5 px-3 text-right">Acción</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.05] font-mono-code">
-                  {payments.map((p) => (
-                    <tr key={p.id} className="hover:bg-white/[0.02]">
-                      <td className="px-6 py-4 text-white font-bold">{p.invoice_id}</td>
-                      <td className="px-6 py-4 text-[#FF9F0A]">/{p.note_slug || p.note_id}</td>
-                      <td className="px-6 py-4 text-white font-bold">${p.amount} USD</td>
-                      <td className="px-6 py-4">
-                        <span className={`pf-pill ${p.status === "paid" ? "pf-pill-ok" : "pf-pill-warm"}`}>
-                          {p.status === "paid" ? "Pagado" : "Pendiente"}
-                        </span>
+                <tbody className="divide-y divide-white/[0.04]">
+                  {payments.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-10 text-center text-zinc-500">
+                        No hay órdenes de pago registradas.
                       </td>
-                      <td className="px-6 py-4 text-gray-400">{new Date(p.created_at).toLocaleString()}</td>
-                      <td className="px-6 py-4 text-right space-x-2">
-                        {p.status !== "paid" && (
+                    </tr>
+                  ) : (
+                    payments.map((p) => (
+                      <tr key={p.id} className="hover:bg-white/[0.02]">
+                        <td className="py-3 px-3 font-mono-code text-white font-medium">
+                          {p.invoice_id}
+                        </td>
+                        <td className="py-3 px-3 font-mono-code text-[#F59E0B]">
+                          /{p.note_slug}
+                        </td>
+                        <td className="py-3 px-3 font-mono-code text-white font-semibold">
+                          ${p.amount} USD
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`console-badge ${
+                              p.status === "paid"
+                                ? "console-badge-emerald"
+                                : p.status === "pending"
+                                ? "console-badge-amber"
+                                : "console-badge-rose"
+                            }`}
+                          >
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-zinc-400 font-mono-code text-[11px]">
+                          {new Date(p.created_at).toLocaleString()}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          {p.status === "pending" && (
+                            <button
+                              type="button"
+                              onClick={() => handleApprovePayment(p.id)}
+                              className="console-btn-primary px-2.5 py-1 text-xs mr-1"
+                            >
+                              Aprobar
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={() => handleApprovePayment(p.id)}
-                            className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-[#30D158] border border-emerald-500/30 text-xs font-extrabold font-manrope"
+                            onClick={() => handleDeletePayment(p.id)}
+                            className="console-btn-danger p-1"
+                            title="Eliminar registro"
                           >
-                            Aprobar y Desbloquear
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleDeletePayment(p.id)}
-                          className="p-2 rounded-xl bg-red-500/10 text-[#FF6961] hover:bg-red-500/20"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {payments.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-gray-500 font-manrope">
-                        No hay órdenes de pago registradas aún.
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
@@ -1775,259 +1664,199 @@ export default function App() {
           </div>
         )}
 
-        {/* =========================================================
-            TAB 5: SOPORTE, CONTACTO & REPORTES DMCA
-           ========================================================= */}
+        {/* TAB 4: MENSAJES & DMCA */}
         {activeTab === "messages" && (
-          <div className="pf-panel overflow-hidden">
-            <div className="p-5 border-b border-white/[0.08]">
-              <h2 className="text-lg font-extrabold text-white">Bandeja de Soporte, Contacto y Reportes DMCA</h2>
-              <p className="text-xs text-gray-400">
-                Mensajes enviados por usuarios desde los formularios públicos de Notepad.do.
-              </p>
+          <div className="console-card p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+              <div>
+                <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Mensajes de Contacto & Solicitudes DMCA</span>
+                </h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Formularios recibidos a través de /contacto y /reportar-abuso.
+                </p>
+              </div>
             </div>
 
-            <div className="divide-y divide-white/[0.06]">
-              {messages.map((m) => (
-                <div key={m.id} className="p-5 flex flex-col sm:flex-row items-start justify-between gap-4 hover:bg-white/[0.02]">
-                  <div className="space-y-1.5 max-w-3xl">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`pf-pill ${
-                          m.status === "unread"
-                            ? "pf-pill-warm"
-                            : m.status === "resolved"
-                            ? "pf-pill-ok"
-                            : "bg-white/10 text-gray-300"
-                        }`}
-                      >
-                        {m.status}
-                      </span>
-                      <span className="text-sm font-extrabold text-white">{m.subject || "Sin asunto"}</span>
-                      <span className="text-xs text-[#FF9F0A] font-mono-code">
-                        {m.name} &lt;{m.email}&gt;
-                      </span>
-                      <span className="text-[11px] text-gray-500 font-mono-code">
-                        · IP: {m.ip} · {new Date(m.created_at).toLocaleString()}
-                      </span>
+            <div className="space-y-3">
+              {messages.length === 0 ? (
+                <div className="console-well p-10 text-center text-zinc-500 text-xs">
+                  Bandeja de entrada vacía.
+                </div>
+              ) : (
+                messages.map((m) => (
+                  <div key={m.id} className="console-well p-4 flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 font-mono-code">
+                        <span className="font-bold text-white">{m.name || "Anónimo"}</span>
+                        <span className="text-zinc-500">&lt;{m.email}&gt;</span>
+                        {m.note_slug && (
+                          <span className="text-[#F59E0B]">Nota: /{m.note_slug}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500 text-[11px] font-mono-code">
+                          {new Date(m.created_at).toLocaleString()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMessage(m.id)}
+                          className="console-btn-danger p-1"
+                          title="Eliminar mensaje"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed bg-[#0E0E11] p-3.5 rounded-xl border border-white/[0.06]">
+                    <div className="text-xs text-zinc-300 font-mono-code whitespace-pre-wrap bg-[#111113] p-2.5 rounded-lg border border-white/[0.04]">
                       {m.message}
-                    </p>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {m.status !== "read" && (
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateMessageStatus(m.id, "read")}
-                        className="pf-btn-secondary px-3 py-1.5 text-xs"
-                      >
-                        Marcar Leído
-                      </button>
-                    )}
-                    {m.status !== "resolved" && (
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateMessageStatus(m.id, "resolved")}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-500/15 text-[#30D158] border border-emerald-500/30 text-xs font-extrabold"
-                      >
-                        Resuelto
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteMessage(m.id)}
-                      className="p-2 rounded-xl bg-red-500/10 text-[#FF6961]"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {messages.length === 0 && (
-                <div className="p-12 text-center text-gray-500 text-xs">
-                  No hay mensajes de soporte ni reportes DMCA.
-                </div>
+                ))
               )}
             </div>
           </div>
         )}
 
-        {/* =========================================================
-            TAB 6: CONFIGURACIÓN GLOBAL, LOGS DE SEGURIDAD & BACKUP
-           ========================================================= */}
-        {activeTab === "settings" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Global Server Settings Form */}
-            <div className="pf-panel p-6 space-y-5">
+        {/* TAB 5: AUDITORÍA & LOGS */}
+        {activeTab === "logs" && (
+          <div className="console-card p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
               <div>
-                <h3 className="text-base font-extrabold text-white">Configuración Global de Notepad.do</h3>
-                <p className="text-xs text-gray-400">
-                  Ajusta los parámetros operativos del servidor Go en caliente.
+                <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#F59E0B]" />
+                  <span>Historial de Auditoría & Eventos de Seguridad</span>
+                </h2>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Registro cronológico de accesos, modificaciones de notas y desbloqueos.
                 </p>
               </div>
-
-              <form method="post" onSubmit={handleSaveSettings} className="space-y-4">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="set-unlock-price" className="text-xs font-bold text-gray-300">
-                    Precio de Desbloqueo Bitcoin OxaPay (USD)
-                  </label>
-                  <input
-                    id="set-unlock-price"
-                    type="number"
-                    value={settings.unlock_price_usd}
-                    onChange={(e) => setSettings({ ...settings, unlock_price_usd: e.target.value })}
-                    className="bg-[#0E0E11] border border-white/[0.1] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono-code"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="set-announcement" className="text-xs font-bold text-gray-300">
-                    Anuncio Global en Notepad.do (Opcional)
-                  </label>
-                  <input
-                    id="set-announcement"
-                    type="text"
-                    value={settings.site_announcement}
-                    onChange={(e) => setSettings({ ...settings, site_announcement: e.target.value })}
-                    placeholder="Ej: Mantenimiento programado o aviso importante..."
-                    className="bg-[#0E0E11] border border-white/[0.1] rounded-xl px-3.5 py-2.5 text-xs text-white"
-                  />
-                </div>
-
-                <div className="space-y-2.5 pt-2">
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.scraper_enabled === "true"}
-                      onChange={(e) =>
-                        setSettings({ ...settings, scraper_enabled: e.target.checked ? "true" : "false" })
-                      }
-                      className="w-4 h-4 rounded accent-[#FF9F0A]"
-                    />
-                    <span className="text-xs font-bold text-gray-200">
-                      Habilitar Scraper Automático de respaldo desde notepad.pw
-                    </span>
-                  </label>
-
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.adsense_enabled === "true"}
-                      onChange={(e) =>
-                        setSettings({ ...settings, adsense_enabled: e.target.checked ? "true" : "false" })
-                      }
-                      className="w-4 h-4 rounded accent-[#FF9F0A]"
-                    />
-                    <span className="text-xs font-bold text-gray-200">
-                      Mostrar Banners de Google AdSense en el Editor Público
-                    </span>
-                  </label>
-                </div>
-
-                <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
-                  <div className="text-[11px] text-gray-500 font-mono-code">
-                    Runtime: {serverInfo.go_version || "Go"} ({serverInfo.os_arch || "server"})
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={actionLoading}
-                    className="pf-btn-primary px-5 py-2.5 text-xs font-extrabold"
-                  >
-                    Guardar Configuración
-                  </button>
-                </div>
-              </form>
-
-              {/* Full Backup Export Box */}
-              <div className="pf-well p-4 space-y-3 border-t border-white/[0.06]">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#FF9F0A]">
-                  Respaldo y Exportación Completa
-                </h4>
-                <p className="text-xs text-gray-400">
-                  Descarga una copia íntegra de todas las notas, contraseñas en texto plano, pagos y configuración.
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleExportDatabase("json")}
-                    className="pf-btn-secondary px-4 py-2 text-xs flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[#FF9F0A]" />
-                    <span>Descargar Backup JSON Completo</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleExportDatabase("csv")}
-                    className="pf-btn-secondary px-4 py-2 text-xs flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[#30D158]" />
-                    <span>Exportar Tabla de Notas y Contraseñas (CSV)</span>
-                  </button>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={handleClearLogs}
+                className="console-btn-danger px-3 py-1.5 text-xs flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Limpiar Historial</span>
+              </button>
             </div>
 
-            {/* Security & Password Attempt Audit Logs */}
-            <div className="pf-panel p-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-extrabold text-white">
-                    Registro de Auditoría y Seguridad ({logs.length})
-                  </h3>
-                  <p className="text-xs text-gray-400">
-                    Monitorea bloqueos de notas, contraseñas intentadas y acciones administrativas en tiempo real.
-                  </p>
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {logs.length === 0 ? (
+                <div className="console-well p-10 text-center text-zinc-500 text-xs">
+                  Sin eventos registrados.
                 </div>
-                {logs.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearLogs}
-                    className="pf-btn-secondary px-3 py-1.5 text-xs text-[#FF6961]"
-                  >
-                    Limpiar Logs
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                {logs.map((l) => (
-                  <div
-                    key={l.id}
-                    className="pf-well p-3 text-xs flex flex-col gap-1 border border-white/[0.05]"
-                  >
-                    <div className="flex items-center justify-between font-mono-code text-[11px]">
-                      <span className="text-[#FF9F0A] font-extrabold">{l.action}</span>
-                      <span className="text-gray-400">/{l.target_slug}</span>
-                      <span className="text-gray-500">{new Date(l.created_at).toLocaleString()}</span>
+              ) : (
+                logs.map((l) => (
+                  <div key={l.id} className="console-well p-3 flex items-start justify-between gap-3 text-xs">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-2 font-mono-code">
+                        <span className="font-semibold text-white">{l.action}</span>
+                        {l.note_slug && <span className="text-[#F59E0B]">/{l.note_slug}</span>}
+                      </div>
+                      <span className="text-zinc-300">{l.details}</span>
+                      <span className="text-[10px] text-zinc-500 font-mono-code">IP: {l.ip}</span>
                     </div>
-                    <div className="text-gray-200 font-mono-code text-xs">{l.details}</div>
-                    <div className="text-[10px] text-gray-500 font-mono-code">IP: {l.ip}</div>
+                    <span className="text-[10px] text-zinc-500 font-mono-code shrink-0">
+                      {new Date(l.created_at).toLocaleString()}
+                    </span>
                   </div>
-                ))}
-                {logs.length === 0 && (
-                  <div className="py-12 text-center text-gray-500 text-xs">
-                    No hay eventos registrados todavía.
-                  </div>
-                )}
-              </div>
+                ))
+              )}
             </div>
           </div>
+        )}
+
+        {/* TAB 6: CONFIGURACIÓN DEL SERVIDOR */}
+        {activeTab === "settings" && (
+          <form method="post" onSubmit={handleSaveSettings} className="console-card p-6 flex flex-col gap-5">
+            <div className="border-b border-white/[0.08] pb-4">
+              <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                <span>Configuración Global del Servidor Go</span>
+              </h2>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Variables persistentes de negocio, monetización y seguridad de Notepad.do.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="console-well p-4 flex flex-col gap-2">
+                <label htmlFor="set-price" className="text-xs font-semibold text-zinc-300">
+                  Precio de Desbloqueo OxaPay (USD)
+                </label>
+                <input
+                  id="set-price"
+                  type="number"
+                  value={settings.unlock_price_usd}
+                  onChange={(e) => setSettings({ ...settings, unlock_price_usd: e.target.value })}
+                  className="console-input p-2.5 text-xs text-white font-mono-code"
+                />
+                <span className="text-[11px] text-zinc-500">
+                  Importe que el usuario abona para eliminar la contraseña de una nota.
+                </span>
+              </div>
+
+              <div className="console-well p-4 flex flex-col gap-2">
+                <label htmlFor="set-banner" className="text-xs font-semibold text-zinc-300">
+                  Anuncio Global del Sitio
+                </label>
+                <input
+                  id="set-banner"
+                  type="text"
+                  value={settings.site_announcement}
+                  onChange={(e) => setSettings({ ...settings, site_announcement: e.target.value })}
+                  placeholder="Mensaje de mantenimiento o aviso superior..."
+                  className="console-input p-2.5 text-xs text-white"
+                />
+                <span className="text-[11px] text-zinc-500">
+                  Se muestra en una barra superior en todo el frontend cuando no está vacío.
+                </span>
+              </div>
+
+              <div className="console-well p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-white">Importador Scraper (notepad.pw)</div>
+                  <div className="text-[11px] text-zinc-500">Permite importar notas automáticamente del dominio legado.</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.scraper_enabled === "true"}
+                  onChange={(e) => setSettings({ ...settings, scraper_enabled: e.target.checked ? "true" : "false" })}
+                  className="w-4 h-4 rounded accent-[#F59E0B]"
+                />
+              </div>
+
+              <div className="console-well p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-white">Publicidad Google AdSense</div>
+                  <div className="text-[11px] text-zinc-500">Activa los bloques publicitarios de 728x90.</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.adsense_enabled === "true"}
+                  onChange={(e) => setSettings({ ...settings, adsense_enabled: e.target.checked ? "true" : "false" })}
+                  className="w-4 h-4 rounded accent-[#F59E0B]"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.08]">
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="console-btn-primary px-5 py-2 text-xs flex items-center gap-1.5"
+              >
+                {actionLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Settings className="w-3.5 h-3.5" />}
+                <span>Guardar Configuración</span>
+              </button>
+            </div>
+          </form>
         )}
       </main>
 
       {/* Modals */}
-      {passwordModalNote && (
-        <PasswordModal
-          note={passwordModalNote}
-          onClose={() => setPasswordModalNote(null)}
-          onSavePassword={handleSetNotePassword}
-          onUnlockNote={handleUnlockNote}
-          loading={actionLoading}
-        />
-      )}
-
       <CreateNoteModal
         isOpen={createModalOpen}
         initialMode={createModalMode}
@@ -2037,16 +1866,22 @@ export default function App() {
         loading={actionLoading}
       />
 
-      {inspectingNote && (
-        <NoteInspectorModal
-          note={inspectingNote}
-          onClose={() => setInspectingNote(null)}
-          onSaveNote={handleSaveInspectedNote}
-          onDeleteNote={handleDeleteNote}
-          onRestoreNote={handleRestoreNote}
-          loading={actionLoading}
-        />
-      )}
+      <PasswordModal
+        note={passwordModalNote}
+        onClose={() => setPasswordModalNote(null)}
+        onSavePassword={handleSetNotePassword}
+        onUnlockNote={handleUnlockNote}
+        loading={actionLoading}
+      />
+
+      <NoteInspectorModal
+        note={inspectingNote}
+        onClose={() => setInspectingNote(null)}
+        onSaveNote={handleSaveInspectedNote}
+        onDeleteNote={handleDeleteNote}
+        onRestoreNote={handleRestoreNote}
+        loading={actionLoading}
+      />
     </div>
   );
 }
