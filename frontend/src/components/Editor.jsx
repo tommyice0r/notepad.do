@@ -9,7 +9,7 @@ import {
   Sparkles, FileEdit, Activity, ExternalLink,
   Eye, EyeOff, ShieldCheck, CheckCheck,
   ChevronDown, ChevronUp, Globe, Terminal, Shield,
-  Palette, Calculator, Equal, Link2
+  Palette, Calculator, Equal, Link2, ArrowUp, ArrowDown, SlidersHorizontal
 } from "lucide-react";
 import {
   detectAllPatterns,
@@ -86,6 +86,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   const [privacyMode, setPrivacyMode] = useState(false);
   const [showInspector, setShowInspector] = useState(false);
   const [showToolsMenu, setShowToolsMenu] = useState(false);
+  const [activeCaseMode, setActiveCaseMode] = useState(null);
   const [totpCodes, setTotpCodes] = useState({});
   const [revealedPasswords, setRevealedPasswords] = useState({});
   const [revealedCards, setRevealedCards] = useState({});
@@ -399,30 +400,26 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
     showToast("Copiado con datos sensibles censurados (********)");
   };
 
-  // Transform case (UPPERCASE, lowercase, Title Case, Sentence case) on selection or entire note
+  // Transform case (UPPERCASE, lowercase, Title Case, Sentence case) on entire notepad + live typing mode
   const handleCaseTransform = (mode, label) => {
-    if (!content.trim()) return;
-    const el = textareaRef.current;
-    if (el && el.selectionStart !== el.selectionEnd) {
-      const start = el.selectionStart;
-      const end = el.selectionEnd;
-      const selected = content.slice(start, end);
-      const replaced = transformTextCase(selected, mode);
-      const updated = content.slice(0, start) + replaced + content.slice(end);
-      setContent(updated);
-      saveNote(updated);
-      showToast(`Selección en ${label}`);
-      setTimeout(() => {
-        el.focus();
-        el.setSelectionRange(start, start + replaced.length);
-      }, 10);
+    const hasText = content.trim().length > 0;
+    const updated = hasText ? transformTextCase(content, mode) : content;
+
+    if (activeCaseMode === mode && (!hasText || updated === content)) {
+      setActiveCaseMode(null);
+      showToast(`Modo ${label} desactivado`);
       return;
     }
-    const updated = transformTextCase(content, mode);
-    setContent(updated);
-    saveNote(updated);
-    setShowToolsMenu(false);
-    showToast(`Texto convertido a ${label}`);
+
+    setActiveCaseMode(mode);
+    if (hasText) {
+      setContent(updated);
+      saveNote(updated);
+      showToast(`Todo el bloc en ${label}`);
+    } else {
+      showToast(`Modo ${label} activo al escribir`);
+    }
+    textareaRef.current?.focus();
   };
 
   // Statistics
@@ -748,7 +745,24 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
               autoFocus
               onScroll={handleScroll}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                const rawVal = e.target.value;
+                if (!activeCaseMode) {
+                  setContent(rawVal);
+                  return;
+                }
+                const start = e.target.selectionStart;
+                const end = e.target.selectionEnd;
+                const transformed = transformTextCase(rawVal, activeCaseMode);
+                setContent(transformed);
+                if (transformed !== rawVal) {
+                  requestAnimationFrame(() => {
+                    if (textareaRef.current) {
+                      textareaRef.current.setSelectionRange(start, end);
+                    }
+                  });
+                }
+              }}
               style={{ 
                 fontSize: `${fontSize}px`,
                 fontFamily: activeFontFamily
@@ -1406,7 +1420,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 showToast("Enlace copiado al portapapeles");
               }}
               title="Haz clic para copiar el enlace de esta nota"
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white cursor-pointer transition-colors font-mono-code text-[11px] min-w-0 max-w-[165px] sm:max-w-[240px]"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white cursor-pointer transition-colors font-mono-code text-[11px] min-w-0 max-w-[155px] sm:max-w-[240px]"
             >
               <span className="text-gray-500 shrink-0">Enlace:</span>
               <span className="text-[#FF9F0A] truncate">/{slug}</span>
@@ -1418,6 +1432,15 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             >
               Compartir
             </button>
+
+            {/* Mobile compact L/W/C counter */}
+            <div className="flex sm:hidden items-center gap-1 font-mono-code text-[10px] text-gray-500 tabular-nums px-1">
+              <span>{linesCount}L</span>
+              <span>·</span>
+              <span>{wordsCount}W</span>
+              <span>·</span>
+              <span>{charsCount}C</span>
+            </div>
 
             {/* Quick Math Pill (if numbers detected) */}
             {mathResult && (
@@ -1441,9 +1464,9 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             </button>
           </div>
 
-          {/* Right / Bottom Mobile Row: Word counters on left (mobile), font zoom, line numbers toggle, and subtle Double-Bezel Aa Studio pinned right */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5 pt-1.5 sm:pt-0 border-t border-white/[0.05] sm:border-t-0 text-gray-400 text-[11px]">
-            <div className="flex items-center gap-1.5 sm:gap-2 font-mono-code text-[10px] sm:text-[11px] text-gray-500 tabular-nums">
+          {/* Right / Bottom Mobile Row: Outside Mobile-Icon Case Buttons, Word Counters, Zoom, Line Numbers & Quick Clean Menu */}
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2.5 pt-1.5 sm:pt-0 border-t border-white/[0.05] sm:border-t-0 text-gray-400 text-[11px]">
+            <div className="hidden sm:flex items-center gap-1.5 font-mono-code text-[11px] text-gray-500 tabular-nums">
               <span>{linesCount}L</span>
               <span>·</span>
               <span>{wordsCount}W</span>
@@ -1451,7 +1474,70 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
               <span>{charsCount}C</span>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Outside Segmented Case Controls with Mobile-Style Icons (Applies to whole notepad + live typing) */}
+            <div
+              role="group"
+              aria-label="Cambiar mayúsculas y minúsculas de todo el bloc"
+              className="flex items-center gap-0.5 p-0.5 rounded-xl bg-[#18181C] ring-1 ring-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]"
+            >
+              <button
+                type="button"
+                onClick={() => handleCaseTransform("upper", "MAYÚSCULAS")}
+                title="Todo el bloc en MAYÚSCULAS (y escribir en mayúsculas)"
+                className={`px-1.5 sm:px-2 py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
+                  activeCaseMode === "upper"
+                    ? "bg-[#FF9F0A] text-black shadow-sm"
+                    : "text-gray-300 hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
+                <ArrowUp className="w-3 h-3 stroke-[2.6] shrink-0" />
+                <span className="font-mono-code">AA</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCaseTransform("lower", "minúsculas")}
+                title="Todo el bloc en minúsculas (y escribir en minúsculas)"
+                className={`px-1.5 sm:px-2 py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
+                  activeCaseMode === "lower"
+                    ? "bg-[#FF9F0A] text-black shadow-sm"
+                    : "text-gray-300 hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
+                <ArrowDown className="w-3 h-3 stroke-[2.6] shrink-0" />
+                <span className="font-mono-code">aa</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCaseTransform("title", "Título")}
+                title="Todo el bloc en Formato Título (Primera Letra Mayúscula)"
+                className={`px-1.5 sm:px-2 py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
+                  activeCaseMode === "title"
+                    ? "bg-[#FF9F0A] text-black shadow-sm"
+                    : "text-gray-300 hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
+                <ArrowUp className="w-2.5 h-2.5 stroke-[2.6] shrink-0" />
+                <span className="font-mono-code">Aa</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCaseTransform("sentence", "Oración")}
+                title="Todo el bloc en Formato Oración (Mayúscula inicial)"
+                className={`px-1.5 sm:px-2 py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-1 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
+                  activeCaseMode === "sentence"
+                    ? "bg-[#FF9F0A] text-black shadow-sm"
+                    : "text-gray-300 hover:text-white hover:bg-white/[0.06]"
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80 shrink-0" />
+                <span className="font-mono-code">A.</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Zoom controls */}
               <div className="flex items-center bg-[#1B1B1E] border border-white/[0.08] rounded-lg p-0.5">
                 <button
@@ -1461,7 +1547,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
                 </button>
-                <span className="px-1.5 font-mono-code text-[10px] text-gray-400 tabular-nums">{fontSize}px</span>
+                <span className="px-1 sm:px-1.5 font-mono-code text-[10px] text-gray-400 tabular-nums">{fontSize}px</span>
                 <button
                   onClick={() => setFontSize(Math.min(24, fontSize + 1))}
                   title="Aumentar fuente"
@@ -1484,20 +1570,20 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 <Hash className="w-3.5 h-3.5" />
               </button>
 
-              {/* Subtle Bottom-Right "Aa" Typography & Micro-Studio (Double-Bezel Architecture) */}
+              {/* Subtle Bottom-Right Quick-Clean Micro-Studio (Double-Bezel Architecture) */}
               <div className="relative">
                 <div className="p-0.5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
                   <button
                     type="button"
                     onClick={() => setShowToolsMenu(!showToolsMenu)}
-                    title="Mayúsculas, minúsculas, capitalizar y utilidades rápidas"
-                    className={`px-2.5 py-1 rounded-[calc(0.75rem-2px)] text-[11px] font-bold tracking-tight flex items-center gap-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] ${
+                    title="Utilidades de limpieza rápida"
+                    className={`px-2 py-1 rounded-[calc(0.75rem-2px)] text-[11px] font-bold tracking-tight flex items-center gap-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] ${
                       showToolsMenu
                         ? "bg-[#FF9F0A] text-black"
                         : "bg-[#18181C] hover:bg-[#222228] text-gray-300 hover:text-white"
                     }`}
                   >
-                    <span className="font-mono-code">Aa</span>
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
                     <ChevronUp
                       className={`w-3 h-3 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                         showToolsMenu ? "rotate-180 text-black" : "text-gray-500"
@@ -1514,55 +1600,11 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       onClick={() => setShowToolsMenu(false)}
                       className="fixed inset-0 z-40"
                     />
-                    <div className="absolute bottom-full right-0 mb-2.5 w-[min(18rem,calc(100vw-1.5rem))] p-1.5 rounded-[1.35rem] bg-[#09090B]/95 ring-1 ring-white/[0.09] shadow-[0_24px_48px_rgba(0,0,0,0.8)] z-50 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                    <div className="absolute bottom-full right-0 mb-2.5 w-[min(17.5rem,calc(100vw-1.5rem))] p-1.5 rounded-[1.35rem] bg-[#09090B]/95 ring-1 ring-white/[0.09] shadow-[0_24px_48px_rgba(0,0,0,0.8)] z-50 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
                       {/* Inner Core (Double-Bezel) */}
                       <div className="rounded-[calc(1.35rem-0.375rem)] bg-[#121216] p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] space-y-2.5 text-[11px]">
                         
-                        {/* 1. Segmented Typography Case Bar (Works on Selection or Entire Note) */}
-                        <div>
-                          <div className="flex items-center justify-between px-1 mb-1.5">
-                            <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-500">
-                              Texto / Selección
-                            </span>
-                            <span className="text-[9px] font-mono-code text-[#FF9F0A]">Aa</span>
-                          </div>
-                          <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-[#0A0A0D] ring-1 ring-white/[0.06]">
-                            <button
-                              type="button"
-                              onClick={() => handleCaseTransform("upper", "MAYÚSCULAS")}
-                              title="Convertir todo o la selección a MAYÚSCULAS"
-                              className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
-                            >
-                              MAYÚS
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCaseTransform("lower", "minúsculas")}
-                              title="Convertir todo o la selección a minúsculas"
-                              className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
-                            >
-                              minús
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCaseTransform("title", "Capitalizado")}
-                              title="Primera Letra De Cada Palabra En Mayúscula"
-                              className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
-                            >
-                              Título
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleCaseTransform("sentence", "Tipo oración")}
-                              title="Primera letra de cada oración en mayúscula"
-                              className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
-                            >
-                              Oración
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* 2. Compact 2-Column Micro-Bento Grid for List & Regex Actions */}
+                        {/* Compact 2-Column Micro-Bento Grid for List & Regex Actions */}
                         <div>
                           <div className="flex items-center justify-between px-1 mb-1.5">
                             <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-500">
@@ -1620,7 +1662,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                           </div>
                         </div>
 
-                        {/* 3. Safe Censored Copy Action */}
+                        {/* Safe Censored Copy Action */}
                         <button
                           type="button"
                           onClick={handleCopyRedacted}
