@@ -12,6 +12,7 @@ import { scanAllNotesGlobal } from "./utils/patternScanner";
 import PasswordModal from "./components/PasswordModal";
 import CreateNoteModal from "./components/CreateNoteModal";
 import NoteInspectorModal from "./components/NoteInspectorModal";
+import BrandLogo from "./components/BrandLogo";
 import {
   Shield, KeyRound, Lock, Unlock, FileText, DollarSign,
   CheckCircle2, Search, Copy, Check, RefreshCw, LogOut,
@@ -503,9 +504,7 @@ export default function App() {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-[#09090B]">
         <div className="w-full max-w-sm console-card p-7 flex flex-col items-center border border-white/[0.08]">
-          <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.1] flex items-center justify-center text-white mb-4">
-            <Lock className="w-5 h-5" />
-          </div>
+          <BrandLogo size="lg" className="mb-4" />
 
           <h1 className="text-xl font-bold text-white tracking-tight text-center mb-1">
             Notepad Console
@@ -664,9 +663,7 @@ export default function App() {
       <header className="sticky top-0 z-30 bg-[#09090B]/90 backdrop-blur-xl border-b border-white/[0.08]">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.1] flex items-center justify-center text-white">
-              <Lock className="w-4 h-4" />
-            </div>
+            <BrandLogo size="md" />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-sm font-bold text-white tracking-tight">

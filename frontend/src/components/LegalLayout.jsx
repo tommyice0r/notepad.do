@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { FileEdit, Plus, ArrowLeft, Shield, FileText, HelpCircle, Mail, AlertTriangle, BookOpen } from "lucide-react";
+import { Plus, ArrowLeft, Shield, FileText, HelpCircle, Mail, AlertTriangle, BookOpen } from "lucide-react";
 import { openCookiePreferences } from "./CookieConsent";
+import BrandLogo from "./BrandLogo";
 
 export default function LegalLayout({ title, subtitle, lastUpdated, children }) {
   const location = useLocation();
@@ -21,9 +22,7 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
       {/* Top Header */}
       <header className="w-full max-w-[1200px] mx-auto flex items-center justify-between py-4 border-b border-white/[0.08] mb-6">
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-xl bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A] shadow-[0_4px_14px_rgba(255,159,10,0.2)]">
-            <FileEdit className="w-4 h-4" />
-          </div>
+          <BrandLogo size="md" />
           <span className="font-extrabold text-lg tracking-tight text-white group-hover:text-[#FF9F0A] transition-colors">
             Notepad<span className="text-[#FF9F0A]">.do</span>
           </span>

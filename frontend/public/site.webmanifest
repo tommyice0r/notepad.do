@@ -1,0 +1,17 @@
+{
+  "name": "Notepad.do — Bloc de notas online rápido",
+  "short_name": "Notepad.do",
+  "description": "Bloc de notas online gratuito con guardado automático en tiempo real, calculadora integrada y enlaces cortos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060607",
+  "theme_color": "#060607",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

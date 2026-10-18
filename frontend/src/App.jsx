@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } f
 import api from "./utils/api";
 import Editor from "./components/Editor";
 import Admin from "./components/Admin";
+import BrandLogo from "./components/BrandLogo";
 import CookieConsent, { openCookiePreferences } from "./components/CookieConsent";
 
 // AdSense Compliance & Landing Pages
@@ -306,8 +307,9 @@ function AdminPage() {
   return (
     <div className="min-h-screen bg-[#060607] text-[#EDEDED] font-manrope flex flex-col justify-between p-3 sm:p-6">
       <header className="w-full max-w-[1200px] mx-auto pb-4 mb-4 border-b border-white/[0.08] flex items-center justify-between">
-        <Link to="/" className="text-sm font-bold text-gray-400 hover:text-white transition-colors">
-          ← Volver a Notepad.do
+        <Link to="/" className="flex items-center gap-2 text-sm font-bold text-gray-300 hover:text-white transition-colors group">
+          <BrandLogo size="sm" />
+          <span>← Volver a Notepad.do</span>
         </Link>
         <Link to="/nueva" className="pf-btn-primary px-3 py-1 text-xs font-bold">
           Abrir nuevo bloc

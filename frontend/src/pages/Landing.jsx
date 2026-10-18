@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import BrandLogo from "../components/BrandLogo";
 import { 
   FileEdit, Plus, ArrowRight, Zap, Shield, Database, 
   Lock, RefreshCw, QrCode, CheckCircle2, ChevronRight, 
@@ -37,10 +38,8 @@ export default function Landing() {
       {/* 1. TOP HEADER */}
       <header className="w-full border-b border-white/[0.08] bg-[#0A0A0C]/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-[1300px] mx-auto h-16 px-4 sm:px-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF9F0A]/20 to-[#FF7B00]/10 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A] shadow-[0_4px_14px_rgba(255,159,10,0.2)]">
-              <FileEdit className="w-4 h-4" />
-            </div>
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <BrandLogo size="md" />
             <span className="font-extrabold text-lg tracking-tight text-white font-manrope">
               Notepad<span className="text-[#FF9F0A]">.do</span>
             </span>
@@ -343,9 +342,7 @@ export default function Landing() {
           
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-[#FF9F0A]/20 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A]">
-                <FileEdit className="w-3.5 h-3.5" />
-              </div>
+              <BrandLogo size="sm" />
               <span className="font-extrabold text-base tracking-tight text-white font-manrope">
                 Notepad<span className="text-[#FF9F0A]">.do</span>
               </span>

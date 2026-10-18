@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import api from "../utils/api";
+import BrandLogo from "./BrandLogo";
 import { 
   Plus, Lock, Unlock, Copy, Check, Share2, 
   Download, ZoomIn, ZoomOut, Hash, Send, 
@@ -601,16 +602,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           {/* Left: Notepad Brand Logo */}
           <div className="flex items-center gap-2.5">
             <Link to="/" className="flex items-center gap-2 group">
-              <div 
-                className="w-7 h-7 rounded-lg border flex items-center justify-center transition-colors"
-                style={{ 
-                  backgroundColor: `${theme.accentColor}26`, 
-                  borderColor: `${theme.accentColor}4D`,
-                  color: theme.accentColor
-                }}
-              >
-                <FileEdit className="w-3.5 h-3.5" />
-              </div>
+              <BrandLogo accentColor={theme.accentColor} size="sm" />
               <span className="font-extrabold text-base tracking-tight text-white group-hover:opacity-90 transition-colors font-manrope">
                 notepad<span style={{ color: theme.accentColor }}>.do</span>
               </span>
