@@ -46,14 +46,14 @@ export default function Terms() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-bold text-white">5. Pagos de Desbloqueo y Transacciones OxaPay</h2>
+        <h2 className="text-lg font-bold text-white">5. Servicios Opcionales de Recuperación de Acceso</h2>
         <p>
-          La función opcional de recuperación mediante pago de $500 USD en criptomonedas (Bitcoin) es procesada por el proveedor externo <strong>OxaPay</strong>. Al iniciar un pago:
+          En caso de pérdida u olvido de la clave de una nota protegida, la plataforma puede ofrecer servicios automatizados de recuperación administrativa procesados a través de pasarelas externas verificadas. Al solicitar la liberación de una nota bloqueada:
         </p>
         <ul className="list-disc pl-5 space-y-1.5 text-gray-300">
-          <li>Reconoces que las transacciones en la cadena de bloques son irreversibles.</li>
-          <li>Una vez confirmado el pago por la red descentralizada y el webhook de OxaPay, la nota se desbloqueará de forma automatizada.</li>
-          <li>No se emiten reembolsos por notas desbloqueadas con éxito o por pagos enviados a direcciones incorrectas por error del usuario.</li>
+          <li>Declaras ser el autor legítimo o contar con autorización sobre el contenido del documento.</li>
+          <li>Una vez confirmada la operación por la pasarela correspondiente, la restricción de clave se eliminará de forma automatizada.</li>
+          <li>No se emiten reembolsos una vez que el servicio de desbloqueo de la nota se ha completado satisfactoriamente.</li>
         </ul>
       </section>
 

@@ -55,28 +55,33 @@ export default function Faq() {
         />
 
         <FaqItem
+          question="¿Cómo funcionan las sumas tipo Excel y la calculadora integrada?"
+          answer="Si escribes una lista con dos o más importes numéricos o precios (por ejemplo, gastos de un viaje o presupuesto), Notepad.do calcula automáticamente la suma total, el promedio y el rango en la barra inferior. Con el botón 'Insertar Total' puedes añadir el resumen contable al final de tu nota. Además, si escribes una operación como '150 * 4 + 20 =' y pulsas 'Organizar', el editor resuelve la ecuación automáticamente."
+        />
+
+        <FaqItem
+          question="¿Cómo funciona el auto-formato inteligente de texto, enlaces y JSON?"
+          answer="El botón 'Organizar' analiza la estructura de tu borrador: si pegas un bloque JSON válido, lo indenta automáticamente; si pegas direcciones web con parámetros de seguimiento publicitario (como utm_source o fbclid), las limpia para dejar enlaces cortos y legibles."
+        />
+
+        <FaqItem
           question="¿Qué ocurre si olvido la contraseña de mi nota?"
-          answer="Si olvidas la contraseña, la plataforma ofrece un mecanismo automatizado de rescate mediante un pago de $500 USD en Bitcoin a través de la pasarela OxaPay. Una vez que la red blockchain y el webhook confirman la transacción, la nota se desbloquea de manera instantánea y permanente."
+          answer="Por motivos de seguridad, las notas bloqueadas requieren la clave configurada para su lectura o edición. Si eres el titular y necesitas recuperar el acceso a un documento bloqueado, puedes utilizar la opción de soporte automatizado en la pantalla de bloqueo o comunicarte a través de nuestra página de Contacto."
         />
 
         <FaqItem
-          question="¿Cómo funciona la migración de notas desde notepad.pw?"
-          answer="Si accedes a una dirección que existía previamente en notepad.pw (por ejemplo, notepad.do/holdsa29jd12), nuestro scraper en segundo plano consulta el servidor antiguo. Si encuentra contenido, te mostrará un aviso en la parte superior preguntándote si deseas guardarlo en Notepad.do para que no pierdas tus apuntes históricos."
-        />
-
-        <FaqItem
-          question="¿Qué es la detección de contraseñas y claves?"
-          answer="Si escribes palabras como 'password: clave', 'user: admin' o 'api_key: xyz', la plataforma les coloca un distintivo visual suave en pantalla para que las identifiques fácilmente. Sin embargo, al copiar con el botón 'Copiar todo' o seleccionar con el ratón, siempre obtienes el texto plano puro, sin etiquetas HTML."
+          question="¿Puedo personalizar el fondo, el tema visual y el tamaño de letra?"
+          answer="Sí. Haciendo clic en el icono de la paleta de colores en la barra superior puedes elegir entre fondos minimalistas, fotografías en alta definición, fondos animados, ajustar la transparencia del panel de cristal y cambiar la tipografía del editor. Tus preferencias visuales se guardan localmente en tu navegador."
         />
 
         <FaqItem
           question="¿Cuánto tiempo se guardan las notas?"
-          answer="Las notas se guardan de forma persistente mientras la plataforma esté activa. Recomendamos no obstante mantener una copia de respaldo descargando el archivo (.txt) si se trata de información crítica."
+          answer="Las notas se guardan de forma persistente en nuestra base de datos en la nube mientras la plataforma esté activa. Recomendamos también utilizar el botón 'Descargar (.txt)' en la barra superior para conservar copias locales de documentos importantes."
         />
 
         <FaqItem
           question="¿Por qué hay anuncios en la página?"
-          answer="Los anuncios gestionados por Google AdSense ubicados arriba y abajo del bloc de notas nos permiten financiar la infraestructura de servidores de alta velocidad, las copias de seguridad de PostgreSQL y el soporte técnico, manteniendo el servicio 100% gratuito para todos."
+          answer="Los espacios publicitarios gestionados por Google AdSense nos permiten financiar los servidores de sincronización en tiempo real, el almacenamiento en la nube y el mantenimiento técnico, manteniendo Notepad.do 100% gratuito y sin registro obligatorio para todos los usuarios."
         />
 
       </div>

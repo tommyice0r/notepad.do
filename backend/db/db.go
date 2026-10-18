@@ -77,12 +77,16 @@ func Init() {
 
 func initDefaultSettings() {
 	defaults := map[string]string{
-		"unlock_price_usd":  "500",
-		"scraper_enabled":   "true",
-		"maintenance_mode":  "false",
-		"adsense_enabled":   "true",
-		"max_note_length":   "500000",
-		"site_announcement": "",
+		"unlock_price_usd":    "500",
+		"scraper_enabled":     "true",
+		"maintenance_mode":    "false",
+		"adsense_enabled":     "true",
+		"adsense_client_id":   "",
+		"adsense_slot_top":    "",
+		"adsense_slot_bottom": "",
+		"adsense_auto_ads":    "true",
+		"max_note_length":     "500000",
+		"site_announcement":   "",
 	}
 
 	for k, v := range defaults {

@@ -1,12 +1,13 @@
-User-agent: *
-Allow: /
-
-# Google AdSense Crawler
 User-agent: Mediapartners-Google
 Allow: /
 
-# Google AdsBot
 User-agent: AdsBot-Google
 Allow: /
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
 
 Sitemap: https://notepad.do/sitemap.xml

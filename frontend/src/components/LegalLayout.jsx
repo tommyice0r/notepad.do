@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { FileEdit, Plus, ArrowLeft, Shield, FileText, HelpCircle, Mail, AlertTriangle, BookOpen } from "lucide-react";
+import { openCookiePreferences } from "./CookieConsent";
 
 export default function LegalLayout({ title, subtitle, lastUpdated, children }) {
   const location = useLocation();
@@ -30,11 +31,11 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
 
         <div className="flex items-center gap-3">
           <Link
-            to="/"
+            to="/info"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-400 hover:text-white bg-[#141416] hover:bg-[#1B1B1E] border border-white/[0.08] transition-all"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Volver al inicio</span>
+            <span className="hidden sm:inline">Inicio e información</span>
           </Link>
 
           <Link
@@ -79,7 +80,7 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
 
             <div className="mt-6 pt-4 border-t border-white/[0.06] px-3">
               <span className="text-[11px] text-gray-500 block leading-relaxed">
-                Notepad.do cumple con las políticas de Google AdSense y normativas GDPR / CCPA.
+                Notepad.do cumple con las políticas de editores de Google AdSense y normativas RGPD / CCPA.
               </span>
             </div>
           </div>
@@ -113,10 +114,18 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
       {/* Footer */}
       <footer className="w-full max-w-[1200px] mx-auto pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-3">
         <span>© 2026 Notepad.do — Todos los derechos reservados.</span>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link to="/privacidad" className="hover:text-gray-300 transition-colors">Privacidad</Link>
           <Link to="/terminos" className="hover:text-gray-300 transition-colors">Términos</Link>
           <Link to="/cookies" className="hover:text-gray-300 transition-colors">Cookies</Link>
+          <button
+            type="button"
+            onClick={openCookiePreferences}
+            className="hover:text-[#FF9F0A] transition-colors cursor-pointer"
+          >
+            Preferencias de cookies
+          </button>
+          <Link to="/reportar-abuso" className="hover:text-gray-300 transition-colors">Reportar abuso</Link>
           <Link to="/contacto" className="hover:text-gray-300 transition-colors">Contacto</Link>
         </div>
       </footer>

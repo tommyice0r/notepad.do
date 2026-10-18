@@ -3,11 +3,71 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Notepad.do — El bloc de notas más rápido de la web</title>
-    <meta name="description" content="Bloc de notas instantáneo en la nube con guardado automático, URLs cortas y protección con contraseña." />
+    <title>Notepad.do — Bloc de notas online rápido con guardado automático en la nube</title>
+    <meta name="description" content="Bloc de notas online gratuito y ultrarrápido con guardado automático en tiempo real, sumas tipo Excel, formato inteligente de texto, códigos QR y protección con contraseña." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#060607" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://notepad.do/" />
+
+    <!-- Open Graph / Social Preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Notepad.do" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:url" content="https://notepad.do/" />
+    <meta property="og:title" content="Notepad.do — El bloc de notas más rápido de la web" />
+    <meta property="og:description" content="Escribe apuntes, listas de presupuestos con suma automática y fragmentos de código al instante. Sin registro obligatorio y con sincronización en la nube." />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Notepad.do — Bloc de notas online instantáneo" />
+    <meta name="twitter:description" content="Bloc de notas rápido en la nube con guardado automático, calculadora integrada y enlaces cortos." />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Google Consent Mode v2 Initialization for Google AdSense (GDPR / CCPA) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments);}
+      (function() {
+        var savedConsent = null;
+        try { savedConsent = localStorage.getItem("notepad_cookie_consent"); } catch (e) {}
+        var granted = savedConsent === "accepted";
+        gtag("consent", "default", {
+          "ad_storage": granted ? "granted" : "denied",
+          "ad_user_data": granted ? "granted" : "denied",
+          "ad_personalization": granted ? "granted" : "denied",
+          "analytics_storage": granted ? "granted" : "denied",
+          "wait_for_update": 500
+        });
+        window.adsbygoogle = window.adsbygoogle || [];
+        if (savedConsent === "essential_only") {
+          window.adsbygoogle.requestNonPersonalizedAds = 1;
+        }
+      })();
+    </script>
+
+    <!-- Schema.org Structured Data for Google AdSense & Search Crawlers -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Notepad.do",
+        "url": "https://notepad.do/",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "All",
+        "inLanguage": "es",
+        "description": "Aplicación web gratuita de bloc de notas en la nube con sincronización instantánea, sumas automáticas estilo hoja de cálculo, formato de código y protección mediante contraseña.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+
     <script src="/config.js"></script>
   </head>
   <body class="bg-[#060607] text-[#EDEDED] antialiased">

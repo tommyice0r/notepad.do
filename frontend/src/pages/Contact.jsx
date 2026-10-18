@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import LegalLayout from "../components/LegalLayout";
 import { Mail, MessageSquare, Send, CheckCircle2, Clock } from "lucide-react";
 import api from "../utils/api";
@@ -30,7 +31,7 @@ export default function Contact() {
     <LegalLayout
       title="Contacto y Soporte"
       subtitle="¿Tienes alguna pregunta, sugerencia o problema técnico? Estamos aquí para ayudarte."
-      lastUpdated="14 de octubre de 2026"
+      lastUpdated="17 de octubre de 2026"
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
@@ -90,7 +91,7 @@ export default function Contact() {
                 >
                   <option value="general">Consulta general sobre el servicio</option>
                   <option value="support">Soporte técnico o error en una nota</option>
-                  <option value="oxapay">Problema con pago o rescate OxaPay</option>
+                  <option value="recovery">Recuperación de acceso a una nota protegida</option>
                   <option value="adsense">Publicidad o colaboración comercial</option>
                   <option value="other">Otro asunto</option>
                 </select>
@@ -151,9 +152,9 @@ export default function Contact() {
             </span>
             <p className="text-xs text-gray-400 leading-relaxed">
               Si detectas una nota que infringe derechos de autor o contiene datos personales, consulta nuestra página de{" "}
-              <a href="/reportar-abuso" className="text-[#FF9F0A] underline hover:text-white">
+              <Link to="/reportar-abuso" className="text-[#FF9F0A] underline hover:text-white">
                 Reportar Abuso / DMCA
-              </a>{" "}
+              </Link>{" "}
               para solicitar su retirada inmediata.
             </p>
           </div>

@@ -262,11 +262,28 @@ func main() {
 			if unlockPrice <= 0 {
 				unlockPrice = 500
 			}
+			adsenseClientID := strings.TrimSpace(db.GetSetting("adsense_client_id", ""))
+			if adsenseClientID == "" {
+				adsenseClientID = strings.TrimSpace(os.Getenv("ADSENSE_CLIENT_ID"))
+			}
+			adsenseSlotTop := strings.TrimSpace(db.GetSetting("adsense_slot_top", ""))
+			if adsenseSlotTop == "" {
+				adsenseSlotTop = strings.TrimSpace(os.Getenv("ADSENSE_SLOT_TOP"))
+			}
+			adsenseSlotBottom := strings.TrimSpace(db.GetSetting("adsense_slot_bottom", ""))
+			if adsenseSlotBottom == "" {
+				adsenseSlotBottom = strings.TrimSpace(os.Getenv("ADSENSE_SLOT_BOTTOM"))
+			}
+
 			jsonResponse(w, http.StatusOK, map[string]interface{}{
-				"unlock_price_usd":  unlockPrice,
-				"maintenance_mode":  db.GetSetting("maintenance_mode", "false") == "true",
-				"adsense_enabled":   db.GetSetting("adsense_enabled", "true") == "true",
-				"site_announcement": db.GetSetting("site_announcement", ""),
+				"unlock_price_usd":    unlockPrice,
+				"maintenance_mode":    db.GetSetting("maintenance_mode", "false") == "true",
+				"adsense_enabled":     db.GetSetting("adsense_enabled", "true") == "true",
+				"adsense_client_id":   adsenseClientID,
+				"adsense_slot_top":    adsenseSlotTop,
+				"adsense_slot_bottom": adsenseSlotBottom,
+				"adsense_auto_ads":    db.GetSetting("adsense_auto_ads", "true") == "true",
+				"site_announcement":   db.GetSetting("site_announcement", ""),
 			})
 		})
 
@@ -1271,6 +1288,43 @@ func main() {
 	})
 	r.Get("/admin/*", serveAdminSPA)
 
+	// Helper to resolve normalized ca-pub-XXXXXXXXXXXXXXXX from DB or Environment
+	getNormalizedAdSenseClientID := func() string {
+		if db.GetSetting("adsense_enabled", "true") != "true" {
+			return ""
+		}
+		raw := strings.TrimSpace(db.GetSetting("adsense_client_id", ""))
+		if raw == "" {
+			raw = strings.TrimSpace(os.Getenv("ADSENSE_CLIENT_ID"))
+		}
+		if raw == "" {
+			raw = strings.TrimSpace(os.Getenv("VITE_ADSENSE_CLIENT_ID"))
+		}
+		if raw == "" || strings.Contains(raw, "0000000000000000") {
+			return ""
+		}
+		if strings.HasPrefix(raw, "pub-") {
+			raw = "ca-" + raw
+		}
+		if strings.HasPrefix(raw, "ca-pub-") && len(raw) >= 16 {
+			return raw
+		}
+		return ""
+	}
+
+	// Dynamic Google AdSense ads.txt endpoint
+	r.Get("/ads.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		clientID := getNormalizedAdSenseClientID()
+		pubID := strings.TrimPrefix(clientID, "ca-")
+		if strings.HasPrefix(pubID, "pub-") {
+			_, _ = fmt.Fprintf(w, "google.com, %s, DIRECT, f08c47fec0942fa0\n", pubID)
+			return
+		}
+		_, _ = fmt.Fprintln(w, "# Google AdSense ads.txt for Notepad.do")
+		_, _ = fmt.Fprintln(w, "# Configure your Publisher ID (ca-pub-XXXXXXXXXXXXXXXX) in the Admin Panel -> Settings or VITE_ADSENSE_CLIENT_ID")
+	})
+
 	// Optional: Also serve public frontend/dist if built on root, otherwise helpful info
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/admin") {
@@ -1288,18 +1342,41 @@ func main() {
 		)
 		if frontendDist != "" {
 			relPath := strings.TrimPrefix(r.URL.Path, "/")
-			if relPath != "" {
+			if relPath != "" && relPath != "index.html" {
 				candidate := filepath.Join(frontendDist, filepath.FromSlash(relPath))
 				if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
 					http.ServeFile(w, r, candidate)
 					return
 				}
 			}
-			http.ServeFile(w, r, filepath.Join(frontendDist, "index.html"))
+
+			indexFile := filepath.Join(frontendDist, "index.html")
+			clientID := getNormalizedAdSenseClientID()
+			if clientID != "" {
+				if rawHTML, err := os.ReadFile(indexFile); err == nil {
+					htmlStr := string(rawHTML)
+					if !strings.Contains(htmlStr, "google-adsense-account") {
+						snippet := fmt.Sprintf(
+							"  <meta name=\"google-adsense-account\" content=\"%s\" />\n    <script async src=\"https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=%s\" crossorigin=\"anonymous\" data-adsense-script=\"true\"></script>\n  </head>",
+							clientID,
+							clientID,
+						)
+						htmlStr = strings.Replace(htmlStr, "</head>", snippet, 1)
+					}
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.WriteHeader(http.StatusOK)
+					_, _ = w.Write([]byte(htmlStr))
+					return
+				}
+			}
+
+			http.ServeFile(w, r, indexFile)
 			return
 		}
 
-		http.Redirect(w, r, "/admin/", http.StatusTemporaryRedirect)
+		jsonResponse(w, http.StatusNotFound, map[string]string{
+			"error": "Ruta no encontrada",
+		})
 	})
 
 	port := os.Getenv("PORT")

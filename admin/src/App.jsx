@@ -62,6 +62,10 @@ export default function App() {
     scraper_enabled: "true",
     maintenance_mode: "false",
     adsense_enabled: "true",
+    adsense_client_id: "",
+    adsense_slot_top: "",
+    adsense_slot_bottom: "",
+    adsense_auto_ads: "true",
     max_note_length: "500000",
     site_announcement: ""
   });
@@ -1830,13 +1834,94 @@ export default function App() {
 
               <div className="console-well p-4 flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-white">Publicidad Google AdSense</div>
-                  <div className="text-[11px] text-zinc-500">Activa los bloques publicitarios de 728x90.</div>
+                  <div className="text-xs font-semibold text-white">Publicidad Google AdSense (Estado General)</div>
+                  <div className="text-[11px] text-zinc-500">Habilita o pausa globalmente la carga de anuncios en Notepad.do.</div>
                 </div>
                 <input
                   type="checkbox"
                   checked={settings.adsense_enabled === "true"}
                   onChange={(e) => setSettings({ ...settings, adsense_enabled: e.target.checked ? "true" : "false" })}
+                  className="w-4 h-4 rounded accent-[#F59E0B]"
+                />
+              </div>
+            </div>
+
+            {/* GOOGLE ADSENSE MONETIZATION CONFIGURATION */}
+            <div className="border-t border-white/[0.08] pt-5 mt-1 space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-[#F59E0B] tracking-tight flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  <span>Credenciales de Monetización Google AdSense</span>
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Cuando tengas tu cuenta de AdSense aprobada, pega aquí tu ID de Editor (`ca-pub-...`). El servidor actualizará `/ads.txt` y activará el script oficial automáticamente sin tocar código.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="console-well p-4 flex flex-col gap-2">
+                  <label htmlFor="set-adsense-client" className="text-xs font-semibold text-zinc-300">
+                    ID de Editor AdSense (Client ID)
+                  </label>
+                  <input
+                    id="set-adsense-client"
+                    type="text"
+                    value={settings.adsense_client_id || ""}
+                    onChange={(e) => setSettings({ ...settings, adsense_client_id: e.target.value.trim() })}
+                    placeholder="ca-pub-0000000000000000"
+                    className="console-input p-2.5 text-xs text-white font-mono-code"
+                  />
+                  <span className="text-[11px] text-zinc-500">
+                    Ej: `ca-pub-1234567890123456`. Se inyecta en `&lt;head&gt;` y en `/ads.txt`.
+                  </span>
+                </div>
+
+                <div className="console-well p-4 flex flex-col gap-2">
+                  <label htmlFor="set-adsense-top" className="text-xs font-semibold text-zinc-300">
+                    Slot ID Banner Superior (Opcional)
+                  </label>
+                  <input
+                    id="set-adsense-top"
+                    type="text"
+                    value={settings.adsense_slot_top || ""}
+                    onChange={(e) => setSettings({ ...settings, adsense_slot_top: e.target.value.trim() })}
+                    placeholder="Ej: 1234567890"
+                    className="console-input p-2.5 text-xs text-white font-mono-code"
+                  />
+                  <span className="text-[11px] text-zinc-500">
+                    ID numérico del bloque 728x90 / Responsive superior.
+                  </span>
+                </div>
+
+                <div className="console-well p-4 flex flex-col gap-2">
+                  <label htmlFor="set-adsense-bottom" className="text-xs font-semibold text-zinc-300">
+                    Slot ID Banner Inferior (Opcional)
+                  </label>
+                  <input
+                    id="set-adsense-bottom"
+                    type="text"
+                    value={settings.adsense_slot_bottom || ""}
+                    onChange={(e) => setSettings({ ...settings, adsense_slot_bottom: e.target.value.trim() })}
+                    placeholder="Ej: 9876543210"
+                    className="console-input p-2.5 text-xs text-white font-mono-code"
+                  />
+                  <span className="text-[11px] text-zinc-500">
+                    ID numérico del bloque 728x90 / Responsive inferior.
+                  </span>
+                </div>
+              </div>
+
+              <div className="console-well p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-white">Anuncios Automáticos de AdSense (Auto Ads)</div>
+                  <div className="text-[11px] text-zinc-500">
+                    Carga el script global `adsbygoogle.js` para la verificación del sitio y anuncios automáticos de Google.
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={settings.adsense_auto_ads !== "false"}
+                  onChange={(e) => setSettings({ ...settings, adsense_auto_ads: e.target.checked ? "true" : "false" })}
                   className="w-4 h-4 rounded accent-[#F59E0B]"
                 />
               </div>

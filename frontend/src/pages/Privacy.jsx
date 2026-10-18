@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import LegalLayout from "../components/LegalLayout";
 
 export default function Privacy() {
@@ -5,7 +6,7 @@ export default function Privacy() {
     <LegalLayout
       title="Política de Privacidad"
       subtitle="Transparencia total sobre cómo recopilamos, protegemos y gestionamos la información de nuestros usuarios."
-      lastUpdated="14 de octubre de 2026"
+      lastUpdated="17 de octubre de 2026"
     >
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-white">1. Introducción y Compromiso</h2>
@@ -27,13 +28,13 @@ export default function Privacy() {
             <strong>Contenido de las notas:</strong> El texto que introduces en el bloc de notas se almacena en nuestros servidores de base de datos para permitirte acceder a él mediante la URL generada.
           </li>
           <li>
-            <strong>Contraseñas de notas:</strong> Cuando decides proteger una nota con clave, almacenamos un hash criptográfico de dicha contraseña. Nunca almacenamos contraseñas en texto claro.
+            <strong>Protección de notas con clave:</strong> Cuando decides proteger una nota con contraseña, procesamos y almacenamos credenciales de control de acceso y su hash criptográfico para restringir la visualización pública del enlace y permitir tareas de soporte y administración.
           </li>
           <li>
-            <strong>Datos de navegación estándar:</strong> Recopilamos automáticamente información técnica no identificable, como dirección IP anonimizada, tipo de navegador, sistema operativo y páginas de referencia, con propósitos de seguridad y prevención de ataques de denegación de servicio (DDoS).
+            <strong>Datos de navegación estándar:</strong> Recopilamos automáticamente información técnica estándar, como dirección IP, tipo de navegador, sistema operativo y marcas de tiempo, con propósitos de seguridad, auditoría antifraude y prevención de ataques de denegación de servicio (DDoS).
           </li>
           <li>
-            <strong>No requerimos registro:</strong> No solicitamos tu nombre, correo electrónico personal ni número de teléfono para utilizar el bloc de notas básico.
+            <strong>No requerimos registro personal:</strong> No solicitamos tu nombre, correo electrónico personal ni número de teléfono para utilizar el bloc de notas.
           </li>
         </ul>
       </section>
@@ -41,14 +42,14 @@ export default function Privacy() {
       <section className="space-y-3 bg-[#1B1B1E]/60 p-5 rounded-xl border border-white/[0.08]">
         <h2 className="text-lg font-bold text-[#FF9F0A]">3. Publicidad y Cookies de Google AdSense (Divulgación Obligatoria)</h2>
         <p>
-          Notepad.do se financia mediante la visualización de publicidad en línea a través del programa <strong>Google AdSense</strong>. En cumplimiento estricto con las políticas de Google:
+          Notepad.do se financia mediante la visualización de publicidad en línea a través del programa <strong>Google AdSense</strong>. En cumplimiento estricto con las políticas de Google y normativas internacionales:
         </p>
         <ul className="list-disc pl-5 space-y-2 text-gray-300">
           <li>
             <strong>Proveedores externos:</strong> Google y otros proveedores publicitarios externos utilizan cookies para publicar anuncios basados en las visitas previas de un usuario a este u otros sitios web de Internet.
           </li>
           <li>
-            <strong>Cookie de DoubleClick / Cookies publicitarias:</strong> El uso de cookies publicitarias permite a Google y a sus socios mostrar anuncios a los usuarios en función de sus visitas a Notepad.do y a otros sitios de la red.
+            <strong>Cookies publicitarias de Google:</strong> El uso de cookies publicitarias permite a Google y a sus socios mostrar anuncios a los usuarios en función de sus visitas a Notepad.do y a otros sitios de la red.
           </li>
           <li>
             <strong>Inhabilitación de publicidad personalizada:</strong> Los usuarios pueden optar por no recibir publicidad personalizada visitando la página de configuración de anuncios de Google en{" "}
@@ -87,22 +88,22 @@ export default function Privacy() {
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-white">4. Almacenamiento y Seguridad de Datos</h2>
         <p>
-          Implementamos protocolos de seguridad estándar de la industria, incluyendo transmisión encriptada mediante protocolo SSL/TLS (HTTPS). Las notas protegidas cuentan con restricciones de acceso por contraseña o mediante el protocolo de rescate automatizado con OxaPay.
+          Implementamos protocolos de seguridad estándar de la industria, incluyendo transmisión encriptada mediante protocolo SSL/TLS (HTTPS), limitación de peticiones (rate limiting) y protección por clave opcional en cada nota.
         </p>
         <p>
-          A pesar de nuestros esfuerzos, ninguna transmisión por Internet es 100% segura. Recomendamos a los usuarios no almacenar información sensible como números de tarjetas de crédito o credenciales críticas sin cifrar.
+          Dado que cualquier persona que conozca la URL pública de una nota sin clave puede visualizarla, recomendamos proteger tus notas con contraseña y evitar almacenar información financiera sensible o secretos críticos sin protección adicional.
         </p>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-bold text-white">5. Derechos del Usuario (GDPR y CCPA)</h2>
+        <h2 className="text-lg font-bold text-white">5. Derechos del Usuario (RGPD / GDPR y CCPA)</h2>
         <p>
           Conforme a las directivas del Reglamento General de Protección de Datos (RGPD / GDPR) de la Unión Europea y la Ley de Privacidad del Consumidor de California (CCPA):
         </p>
         <ul className="list-disc pl-5 space-y-1.5 text-gray-300">
           <li>Tienes derecho a solicitar la eliminación inmediata de cualquier nota que contenga información personal o que infrinja tus derechos.</li>
-          <li>Tienes derecho a oponerte al procesamiento de datos publicitarios mediante la inhabilitación de cookies descrita en la Sección 3.</li>
-          <li>No vendemos ni alquilamos ninguna información personal a terceros bajo ninguna circunstancia.</li>
+          <li>Tienes derecho a gestionar o revocar tu consentimiento de cookies publicitarias en cualquier momento desde el enlace "Preferencias de cookies" en el pie de página.</li>
+          <li>No vendemos ni alquilamos información personal a terceros bajo ninguna circunstancia.</li>
         </ul>
       </section>
 
@@ -110,9 +111,9 @@ export default function Privacy() {
         <h2 className="text-lg font-bold text-white">6. Contacto sobre Privacidad</h2>
         <p>
           Si tienes preguntas sobre nuestra política de privacidad o deseas solicitar la eliminación de contenido específico, puedes escribirnos mediante nuestro{" "}
-          <a href="/contacto" className="text-[#FF9F0A] underline hover:text-white">
+          <Link to="/contacto" className="text-[#FF9F0A] underline hover:text-white">
             formulario de contacto y soporte
-          </a>{" "}
+          </Link>{" "}
           o enviando un correo a <span className="font-mono-code text-white">soporte@notepad.do</span>.
         </p>
       </section>

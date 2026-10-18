@@ -17,7 +17,7 @@ function generateRandomSlug(length = 8) {
 
 export default function Landing() {
   const navigate = useNavigate();
-  const [demoText, setDemoText] = useState("password: mi_clave_secreta_99\nuser: desarrollador_pro\napi_key: pk_live_83917492817\nhttps://notepad.do");
+  const [demoText, setDemoText] = useState("Presupuesto del Proyecto Web:\n- Diseño UI/UX: $320.00\n- Servidor Cloud Anual: $140.50\n- Dominio .do: $45.00\nhttps://notepad.do/info");
   const [copiedDemo, setCopiedDemo] = useState(false);
 
   const handleStartNew = () => {
@@ -84,7 +84,7 @@ export default function Landing() {
 
         {/* Hero Subtitle */}
         <p className="text-base sm:text-xl text-gray-400 max-w-2xl text-balance leading-relaxed mb-8">
-          Escribe notas, fragmentos de código o contraseñas al instante. Sin registros, con guardado automático en tiempo real y protección con contraseña.
+          Escribe apuntes, presupuestos con suma automática o fragmentos de código al instante. Sin registros obligatorios, con guardado en tiempo real y bloqueo por clave.
         </p>
 
         {/* CTA Buttons */}
@@ -144,7 +144,7 @@ export default function Landing() {
             <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-400 font-mono-code">
               <span className="flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A]" />
-                <span>Detección automática de contraseñas, credenciales y URLs.</span>
+                <span>Cálculo automático de sumas tipo Excel, formato JSON y limpieza de enlaces.</span>
               </span>
               <button onClick={handleStartNew} className="text-[#FF9F0A] hover:underline font-bold font-manrope">
                 Abrir en pantalla completa →
@@ -198,12 +198,12 @@ export default function Landing() {
               </div>
               <h3 className="text-lg font-bold text-white mb-2 font-manrope">Protección con Contraseña</h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                ¿Contenido confidencial? Bloquea cualquier nota con una clave única con 1 solo clic. Nadie podrá ver el contenido sin la clave correcta.
+                ¿Apuntes privados o de trabajo? Bloquea cualquier nota con una clave única con un solo clic. Nadie podrá leer ni editar el documento sin autorización.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-[#FF9F0A] flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5 shrink-0" />
-              <span>Cifrado y rescate OxaPay disponible</span>
+              <span>Cifrado criptográfico Bcrypt</span>
             </div>
           </div>
 
@@ -213,14 +213,14 @@ export default function Landing() {
               <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4">
                 <RefreshCw className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2 font-manrope">Migración de Notepad.pw</h3>
+              <h3 className="text-lg font-bold text-white mb-2 font-manrope">Compatibilidad de Enlaces</h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                ¿Tenías notas en el antiguo notepad.pw? Solo entra a la misma URL en Notepad.do y nuestro scraper rescatará automáticamente tu contenido para guardarlo aquí.
+                ¿Tenías apuntes en servicios clásicos de bloc de notas? Ingresa con tu identificador habitual y el asistente de migración te permitirá conservar tu texto.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-blue-400 flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5 shrink-0" />
-              <span>100% compatible con enlaces heredados</span>
+              <span>100% compatible con enlaces cortos</span>
             </div>
           </div>
 
@@ -230,14 +230,14 @@ export default function Landing() {
               <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-4">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2 font-manrope">Detección y Auto-Formato Inteligente</h3>
+              <h3 className="text-lg font-bold text-white mb-2 font-manrope">Sumas Tipo Excel y Auto-Formato</h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Detecta y formatea automáticamente tarjetas de crédito (Visa, Mastercard, Amex con algoritmo Luhn), contraseñas, URLs limpias, proxies y JSON con un solo clic.
+                Suma automáticamente listas de gastos e importes, resuelve ecuaciones matemáticas en línea, limpia parámetros de seguimiento en URLs y formatea JSON con un clic.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-purple-400 flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5 shrink-0" />
-              <span>Tarjetas, credenciales y proxies</span>
+              <span>Cálculos, JSON y enlaces limpios</span>
             </div>
           </div>
 
@@ -361,9 +361,9 @@ export default function Landing() {
           <div>
             <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3 font-manrope">Herramientas</h4>
             <ul className="space-y-2 text-xs text-gray-400">
-              <li><button onClick={handleStartNew} className="hover:text-white transition-colors">Nueva Nota</button></li>
-              <li><Link to="/pro-launch-2026" className="hover:text-white transition-colors">Nota de Ejemplo</Link></li>
-              <li><Link to="/admin" className="hover:text-white transition-colors">Panel de Control</Link></li>
+              <li><button onClick={handleStartNew} className="hover:text-white transition-colors">Crear Nueva Nota</button></li>
+              <li><a href="#caracteristicas" className="hover:text-white transition-colors">Calculadora y Sumas</a></li>
+              <li><a href="#como-funciona" className="hover:text-white transition-colors">Guía de Uso Rápido</a></li>
             </ul>
           </div>
 

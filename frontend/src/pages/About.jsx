@@ -47,9 +47,9 @@ export default function About() {
             <div className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 mb-3">
               <Lock className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-white text-sm mb-1">Protección y Cifrado</h3>
+            <h3 className="font-bold text-white text-sm mb-1">Protección por Clave</h3>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Cifrado seguro con algoritmos de hashing criptográfico de una sola vía (Bcrypt) y mecanismo de rescate descentralizado mediante la red Bitcoin.
+              Protección de documentos mediante algoritmos criptográficos Bcrypt y modo privacidad visual instantáneo para trabajar en entornos compartidos.
             </p>
           </div>
 
@@ -57,9 +57,9 @@ export default function About() {
             <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-3">
               <RefreshCw className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-white text-sm mb-1">Migración Transparente</h3>
+            <h3 className="font-bold text-white text-sm mb-1">Productividad Inteligente</h3>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Compatibilidad con enlaces históricos heredados para recuperar y migrar documentos antiguos con un solo clic.
+              Incluye calculadora en línea, sumas automáticas estilo hoja de cálculo, formateador de JSON, limpieza de enlaces y transferencia móvil por código QR.
             </p>
           </div>
 
@@ -69,10 +69,10 @@ export default function About() {
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-white">3. Modelo de Sostenibilidad</h2>
         <p>
-          Notepad.do es un servicio 100% gratuito para el usuario final. No vendemos tus datos ni mostramos anuncios invasivos que interfieran con la escritura.
+          Notepad.do es un servicio 100% gratuito para estudiantes, desarrolladores, contadores y profesionales. No exigimos suscripciones ni bloqueamos funciones tras muros de pago.
         </p>
         <p>
-          Para mantener la infraestructura de servidores de alto rendimiento, nos apoyamos en publicidad contextual no intrusiva gestionada por <strong>Google AdSense</strong>. Agradecemos a todos nuestros usuarios por apoyar este modelo sostenible.
+          Para financiar la infraestructura de servidores y bases de datos de alta disponibilidad, nos apoyamos en publicidad contextual no intrusiva gestionada por <strong>Google AdSense</strong>, ubicada únicamente en los márgenes exteriores para no interrumpir jamás tu experiencia de lectura y escritura.
         </p>
       </section>
 
