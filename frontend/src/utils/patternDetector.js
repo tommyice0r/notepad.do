@@ -741,6 +741,26 @@ export function redactSensitiveText(content) {
   return redacted;
 }
 
+export function transformTextCase(content, mode = "upper") {
+  if (!content) return content;
+  switch (mode) {
+    case "upper":
+      return content.toLocaleUpperCase("es-ES");
+    case "lower":
+      return content.toLocaleLowerCase("es-ES");
+    case "title":
+      return content
+        .toLocaleLowerCase("es-ES")
+        .replace(/(^|[\s\-_/([{"'])(\p{L})/gu, (match, sep, char) => `${sep}${char.toLocaleUpperCase("es-ES")}`);
+    case "sentence":
+      return content
+        .toLocaleLowerCase("es-ES")
+        .replace(/(^\s*|[.!?¡¿\n]\s*)(\p{L})/gu, (match, sep, char) => `${sep}${char.toLocaleUpperCase("es-ES")}`);
+    default:
+      return content;
+  }
+}
+
 // 9. Generate safe, pixel-perfect overlay HTML without ANY layout shift
 export function generateSafeOverlayHtml(content) {
   if (!content) return "";

@@ -23,7 +23,8 @@ import {
   alignColumnsInText,
   sortLinesInText,
   toggleNumberedLines,
-  redactSensitiveText
+  redactSensitiveText,
+  transformTextCase
 } from "../utils/patternDetector";
 import {
   calculateExcelSum,
@@ -391,6 +392,32 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
     navigator.clipboard.writeText(redacted);
     setShowToolsMenu(false);
     showToast("Copiado con datos sensibles censurados (********)");
+  };
+
+  // Transform case (UPPERCASE, lowercase, Title Case, Sentence case) on selection or entire note
+  const handleCaseTransform = (mode, label) => {
+    if (!content.trim()) return;
+    const el = textareaRef.current;
+    if (el && el.selectionStart !== el.selectionEnd) {
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const selected = content.slice(start, end);
+      const replaced = transformTextCase(selected, mode);
+      const updated = content.slice(0, start) + replaced + content.slice(end);
+      setContent(updated);
+      saveNote(updated);
+      showToast(`Selección en ${label}`);
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start, start + replaced.length);
+      }, 10);
+      return;
+    }
+    const updated = transformTextCase(content, mode);
+    setContent(updated);
+    saveNote(updated);
+    setShowToolsMenu(false);
+    showToast(`Texto convertido a ${label}`);
   };
 
   // Statistics
@@ -1411,91 +1438,15 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={handleAutoOrganize}
               title="Organizar texto, dar formato limpio y resolver cálculos (variables y %)"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF9F0A] text-[11px] font-semibold transition-colors font-manrope"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF9F0A] text-[11px] font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] font-manrope cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A]" />
               <span>Organizar</span>
             </button>
-
-            {/* Non-Intrusive Regex Tools Popover Menu */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowToolsMenu(!showToolsMenu)}
-                title="Herramientas rápidas de limpieza, listas y censura"
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white text-[11px] font-semibold transition-colors font-manrope cursor-pointer"
-              >
-                <Terminal className="w-3.5 h-3.5 text-gray-400" />
-                <span>Herramientas</span>
-                <ChevronUp className="w-3 h-3 text-gray-500" />
-              </button>
-
-              {showToolsMenu && (
-                <div className="absolute bottom-full left-0 mb-2 w-60 rounded-2xl bg-[#141417] border border-white/[0.12] shadow-2xl p-1.5 z-50 space-y-0.5 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => applyTextTransform(removeDuplicateLines, "Líneas duplicadas eliminadas")}
-                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Quitar líneas duplicadas</span>
-                    {patterns.counts.duplicates > 0 && (
-                      <span className="px-1.5 py-0.2 rounded bg-[#FF9F0A]/20 text-[#FF9F0A] font-mono-code text-[10px]">
-                        {patterns.counts.duplicates}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyTextTransform(normalizeCombosInText, "Formato user:pass normalizado")}
-                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Normalizar user:pass</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyTextTransform(toggleNodeFormat, "Formato de nodos convertido")}
-                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Convertir Nodos (IP:Port ⇄ URI)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyTextTransform(alignColumnsInText, "Columnas alineadas en tabla")}
-                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Alinear columnas (| o ;)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyTextTransform((t) => sortLinesInText(t, false), "Líneas ordenadas A ➔ Z")}
-                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Ordenar líneas (A ➔ Z)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyTextTransform(toggleNumberedLines, "Numeración de lista actualizada")}
-                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Numerar / Quitar 1. 2. 3.</span>
-                  </button>
-                  <div className="border-t border-white/[0.08] my-1 pt-1">
-                    <button
-                      type="button"
-                      onClick={handleCopyRedacted}
-                      className="w-full px-3 py-1.5 rounded-xl hover:bg-[#FF9F0A]/15 text-left text-[#FF9F0A] font-semibold flex items-center justify-between cursor-pointer"
-                    >
-                      <span>Copiar nota censurada (***)</span>
-                      <Shield className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Right: Word counters, font zoom, and line numbers toggle */}
-          <div className="flex items-center gap-3 text-gray-400 text-[11px]">
+          {/* Right: Word counters, font zoom, line numbers toggle, and subtle Double-Bezel Aa Studio */}
+          <div className="flex items-center gap-2 sm:gap-2.5 text-gray-400 text-[11px]">
             <div className="hidden sm:flex items-center gap-2 font-mono-code text-gray-500">
               <span>{linesCount}L</span>
               <span>·</span>
@@ -1535,6 +1486,150 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             >
               <Hash className="w-3.5 h-3.5" />
             </button>
+
+            {/* Subtle Bottom-Right "Aa" Typography & Micro-Studio (Double-Bezel Architecture) */}
+            <div className="relative">
+              <div className="p-0.5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
+                <button
+                  type="button"
+                  onClick={() => setShowToolsMenu(!showToolsMenu)}
+                  title="Mayúsculas, minúsculas, capitalizar y utilidades rápidas"
+                  className={`px-2.5 py-1 rounded-[calc(0.75rem-2px)] text-[11px] font-bold tracking-tight flex items-center gap-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] ${
+                    showToolsMenu
+                      ? "bg-[#FF9F0A] text-black"
+                      : "bg-[#18181C] hover:bg-[#222228] text-gray-300 hover:text-white"
+                  }`}
+                >
+                  <span className="font-mono-code">Aa</span>
+                  <ChevronUp
+                    className={`w-3 h-3 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                      showToolsMenu ? "rotate-180 text-black" : "text-gray-500"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {showToolsMenu && (
+                <div className="absolute bottom-full right-0 mb-3 w-72 p-1.5 rounded-[1.35rem] bg-[#09090B]/95 ring-1 ring-white/[0.09] shadow-[0_24px_48px_rgba(0,0,0,0.75)] z-50 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                  {/* Inner Core (Double-Bezel) */}
+                  <div className="rounded-[calc(1.35rem-0.375rem)] bg-[#121216] p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] space-y-2.5 text-[11px]">
+                    
+                    {/* 1. Segmented Typography Case Bar (Works on Selection or Entire Note) */}
+                    <div>
+                      <div className="flex items-center justify-between px-1 mb-1.5">
+                        <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-500">
+                          Texto / Selección
+                        </span>
+                        <span className="text-[9px] font-mono-code text-[#FF9F0A]">Aa</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-[#0A0A0D] ring-1 ring-white/[0.06]">
+                        <button
+                          type="button"
+                          onClick={() => handleCaseTransform("upper", "MAYÚSCULAS")}
+                          title="Convertir todo o la selección a MAYÚSCULAS"
+                          className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
+                        >
+                          MAYÚS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCaseTransform("lower", "minúsculas")}
+                          title="Convertir todo o la selección a minúsculas"
+                          className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
+                        >
+                          minús
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCaseTransform("title", "Capitalizado")}
+                          title="Primera Letra De Cada Palabra En Mayúscula"
+                          className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
+                        >
+                          Título
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCaseTransform("sentence", "Tipo oración")}
+                          title="Primera letra de cada oración en mayúscula"
+                          className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
+                        >
+                          Oración
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 2. Compact 2-Column Micro-Bento Grid for List & Regex Actions */}
+                    <div>
+                      <div className="flex items-center justify-between px-1 mb-1.5">
+                        <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-500">
+                          Limpieza Rápida
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => applyTextTransform(removeDuplicateLines, "Líneas duplicadas eliminadas")}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white flex items-center justify-between transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                        >
+                          <span className="truncate">Sin duplicados</span>
+                          {patterns.counts.duplicates > 0 && (
+                            <span className="px-1.5 rounded bg-[#FF9F0A]/20 text-[#FF9F0A] font-mono-code text-[9px]">
+                              {patterns.counts.duplicates}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextTransform((t) => sortLinesInText(t, false), "Líneas ordenadas A ➔ Z")}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                        >
+                          Ordenar A ➔ Z
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextTransform(toggleNumberedLines, "Numeración 1. 2. 3. actualizada")}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                        >
+                          Lista 1. 2. 3.
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextTransform(alignColumnsInText, "Columnas alineadas")}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                        >
+                          Tabla | ;
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextTransform(normalizeCombosInText, "Formato user:pass normalizado")}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                        >
+                          Limpia user:pass
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyTextTransform(toggleNodeFormat, "Formato de nodos convertido")}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                        >
+                          IP:Port ⇄ URI
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 3. Safe Censored Copy Action */}
+                    <button
+                      type="button"
+                      onClick={handleCopyRedacted}
+                      className="w-full px-3 py-1.5 rounded-xl bg-[#FF9F0A]/10 hover:bg-[#FF9F0A]/20 ring-1 ring-[#FF9F0A]/25 text-[#FF9F0A] font-semibold flex items-center justify-between transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer"
+                    >
+                      <span>Copiar nota censurada (***)</span>
+                      <Shield className="w-3.5 h-3.5" />
+                    </button>
+
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>
