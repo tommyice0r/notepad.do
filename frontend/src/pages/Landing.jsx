@@ -392,7 +392,7 @@ export default function Landing() {
         <div className="max-w-[1300px] mx-auto pt-6 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-3">
           <span>© 2026 Notepad.do — Todos los derechos reservados.</span>
           <span className="text-[11px] font-mono-code text-gray-600">
-            Cumplimiento AdSense · RGPD / GDPR · CCPA
+            Sincronización en tiempo real · Cifrado SSL/TLS
           </span>
         </div>
       </footer>

@@ -32,15 +32,20 @@ function injectHeadMeta(html, seo) {
     `<meta name="robots" content="${escapeHtml(seo.robots)}" />`
   );
 
-  out = out.replace(
-    /<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i,
-    `<link rel="canonical" href="${escapeHtml(seo.canonical)}" />`
-  );
-
-  out = out.replace(
-    /<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/i,
-    `<meta property="og:url" content="${escapeHtml(seo.canonical)}" />`
-  );
+  if (seo.canonical) {
+    out = out.replace(
+      /<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i,
+      `<link rel="canonical" href="${escapeHtml(seo.canonical)}" />`
+    );
+    out = out.replace(
+      /<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/i,
+      `<meta property="og:url" content="${escapeHtml(seo.canonical)}" />`
+    );
+  } else {
+    // Do not mix canonical with noindex on user note pages
+    out = out.replace(/\s*<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i, "");
+    out = out.replace(/\s*<meta\s+property="og:url"\s+content="[^"]*"\s*\/?>/i, "");
+  }
 
   out = out.replace(
     /<meta\s+property="og:title"\s+content="[^"]*"\s*\/?>/i,
@@ -69,12 +74,12 @@ async function runPrerender() {
   const templatePath = path.join(distDir, "index.html");
   const template = fs.readFileSync(templatePath, "utf-8");
 
-  // 1. Generate dist/note.html as the SPA shell for dynamic user notes (/:slug) with noindex, nofollow
+  // 1. Generate dist/note.html as the SPA shell for dynamic user notes (/:slug) with noindex, nofollow and NO canonical
   const noteShellHtml = injectHeadMeta(template, {
     title: "Nota privada en la nube — Notepad.do",
     description:
       "Espacio de trabajo y bloc de notas privado sincronizado en la nube con Notepad.do.",
-    canonical: "https://notepad.do/",
+    canonical: null,
     robots: "noindex, nofollow",
   });
   fs.writeFileSync(path.join(distDir, "note.html"), noteShellHtml, "utf-8");

@@ -109,17 +109,17 @@ export function getSeoForPath(pathname) {
     return {
       title: "Administración — Notepad.do",
       description: "Panel administrativo interno de Notepad.do.",
-      canonical: `${SITE_ORIGIN}/admin`,
+      canonical: null,
       robots: "noindex, nofollow",
     };
   }
 
-  // Dynamic user note slug (e.g. /equipo-sprint): ALWAYS noindex, nofollow
+  // Dynamic user note slug (e.g. /equipo-sprint): ALWAYS noindex, nofollow and NO canonical
   return {
     title: "Nota privada en la nube — Notepad.do",
     description:
       "Espacio de trabajo y bloc de notas privado sincronizado en la nube con Notepad.do.",
-    canonical: `${SITE_ORIGIN}${normalized}`,
+    canonical: null,
     robots: "noindex, nofollow",
   };
 }

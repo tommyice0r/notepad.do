@@ -44,7 +44,7 @@ export default function Faq() {
 
         <FaqItem
           question="¿Necesito registrarme o crear una cuenta?"
-          answer="No. Notepad.do está diseñado para ser totalmente libre de fricciones. Al ingresar a la página principal, se genera una URL única (ejemplo: notepad.do/x8k2p9) donde puedes comenzar a escribir al instante sin contraseñas obligatorias ni correos."
+          answer="No. Notepad.do está diseñado para ser totalmente libre de fricciones. Al entrar a la página principal puedes empezar a escribir directamente en el editor, y en cuanto escribes o compartes tu nota se asigna automáticamente su URL única (ejemplo: notepad.do/x8k2p9) sin contraseñas obligatorias ni correos."
           defaultOpen={true}
         />
 

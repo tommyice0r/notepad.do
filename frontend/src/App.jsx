@@ -67,7 +67,11 @@ function RouteSeoManager({ appConfig }) {
     if (ogDesc) ogDesc.setAttribute("content", current.description);
 
     const ogUrl = document.querySelector('meta[property="og:url"]');
-    if (ogUrl) ogUrl.setAttribute("content", current.canonical);
+    if (current.canonical) {
+      if (ogUrl) ogUrl.setAttribute("content", current.canonical);
+    } else if (ogUrl) {
+      ogUrl.remove();
+    }
 
     let robotsMeta = document.querySelector('meta[name="robots"]');
     if (!robotsMeta) {
@@ -78,12 +82,16 @@ function RouteSeoManager({ appConfig }) {
     robotsMeta.setAttribute("content", current.robots);
 
     let canonicalLink = document.querySelector('link[rel="canonical"]');
-    if (!canonicalLink) {
-      canonicalLink = document.createElement("link");
-      canonicalLink.setAttribute("rel", "canonical");
-      document.head.appendChild(canonicalLink);
+    if (current.canonical) {
+      if (!canonicalLink) {
+        canonicalLink = document.createElement("link");
+        canonicalLink.setAttribute("rel", "canonical");
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.setAttribute("href", current.canonical);
+    } else if (canonicalLink) {
+      canonicalLink.remove();
     }
-    canonicalLink.setAttribute("href", current.canonical);
 
     // Strictly restrict AdSense to verified publisher pages only (never on user note slugs /:slug or /admin)
     window.adsbygoogle = window.adsbygoogle || [];

@@ -79,12 +79,6 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
                 );
               })}
             </nav>
-
-            <div className="hidden md:block mt-6 pt-4 border-t border-white/[0.06] px-3">
-              <span className="text-[11px] text-gray-500 block leading-relaxed">
-                Notepad.do cumple con las políticas de editores de Google AdSense y normativas RGPD / CCPA.
-              </span>
-            </div>
           </div>
         </aside>
 
