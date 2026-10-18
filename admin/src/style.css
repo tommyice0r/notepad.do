@@ -6,6 +6,11 @@
   accent-color: #F59E0B;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   background-color: #09090B;
   background-image: 
@@ -14,15 +19,25 @@ body {
   color: #F4F4F5;
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 639px) {
+  input,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 .font-mono-code {

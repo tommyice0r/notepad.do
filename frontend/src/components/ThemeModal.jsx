@@ -169,74 +169,74 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
-      <div className="w-full max-w-2xl pf-panel shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-white/[0.12] bg-[#141416]/95 backdrop-blur-2xl">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-5">
+      <div className="w-full max-w-2xl pf-panel shadow-2xl overflow-hidden flex flex-col max-h-[90dvh] border border-white/[0.12] bg-[#141416]/95 backdrop-blur-2xl">
         
         {/* Header */}
-        <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between bg-[#18181B]/80">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A]">
+        <div className="px-3.5 sm:px-5 py-3 sm:py-4 border-b border-white/[0.08] flex items-center justify-between gap-2 bg-[#18181B]/80">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-[#FF9F0A]/15 border border-[#FF9F0A]/30 flex items-center justify-center text-[#FF9F0A] shrink-0">
               <Palette className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base font-extrabold text-white font-manrope">
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-extrabold text-white font-manrope truncate">
                 Personalización, Fondos & GIFs
               </h2>
-              <p className="text-[11px] text-gray-400">
-                Soporte de GIFs animados fluidos, fotos HD y almacenamiento local en tu navegador.
+              <p className="text-[11px] text-gray-400 truncate">
+                Soporte de GIFs animados fluidos, fotos HD y almacenamiento local.
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-gray-400 hover:text-white flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-gray-400 hover:text-white flex items-center justify-center transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-white/[0.06] bg-[#0E0E11]/60 text-xs font-bold font-manrope">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 border-b border-white/[0.06] bg-[#0E0E11]/60 text-xs font-bold font-manrope overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("wallpapers")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap ${
               activeTab === "wallpapers"
                 ? "bg-[#FF9F0A]/15 text-[#FF9F0A] border border-[#FF9F0A]/30"
                 : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
-            <Film className="w-3.5 h-3.5" />
+            <Film className="w-3.5 h-3.5 shrink-0" />
             <span>Fondos & GIFs</span>
           </button>
 
           <button
             onClick={() => setActiveTab("glass")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap ${
               activeTab === "glass"
                 ? "bg-[#FF9F0A]/15 text-[#FF9F0A] border border-[#FF9F0A]/30"
                 : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
-            <Sliders className="w-3.5 h-3.5" />
+            <Sliders className="w-3.5 h-3.5 shrink-0" />
             <span>Vidrio & Desenfoque</span>
           </button>
 
           <button
             onClick={() => setActiveTab("fonts")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all shrink-0 whitespace-nowrap ${
               activeTab === "fonts"
                 ? "bg-[#FF9F0A]/15 text-[#FF9F0A] border border-[#FF9F0A]/30"
                 : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
-            <Type className="w-3.5 h-3.5" />
+            <Type className="w-3.5 h-3.5 shrink-0" />
             <span>Tipografía & Color</span>
           </button>
         </div>
 
         {/* Body Content */}
-        <div className="p-5 overflow-y-auto flex-1 space-y-5 text-sm text-gray-300">
+        <div className="p-3.5 sm:p-5 overflow-y-auto flex-1 space-y-5 text-sm text-gray-300">
           
           {/* TAB 1: WALLPAPERS & GIFS */}
           {activeTab === "wallpapers" && (
@@ -249,10 +249,10 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                     Colección de Fondos & GIFs
                   </span>
 
-                  <div className="flex items-center gap-1 bg-[#0E0E11] p-1 rounded-lg border border-white/[0.06] text-[11px] font-manrope">
+                  <div className="flex items-center gap-1 bg-[#0E0E11] p-1 rounded-lg border border-white/[0.06] text-[11px] font-manrope overflow-x-auto no-scrollbar">
                     <button
                       onClick={() => setWallpaperFilter("all")}
-                      className={`px-2.5 py-1 rounded-md transition-colors ${
+                      className={`px-2.5 py-1 rounded-md transition-colors shrink-0 whitespace-nowrap ${
                         wallpaperFilter === "all" ? "bg-white/[0.12] text-white font-bold" : "text-gray-400 hover:text-white"
                       }`}
                     >
@@ -260,27 +260,27 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                     </button>
                     <button
                       onClick={() => setWallpaperFilter("gif")}
-                      className={`px-2.5 py-1 rounded-md flex items-center gap-1 transition-colors ${
+                      className={`px-2.5 py-1 rounded-md flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap ${
                         wallpaperFilter === "gif" ? "bg-[#FF9F0A]/20 text-[#FF9F0A] font-bold border border-[#FF9F0A]/30" : "text-gray-400 hover:text-white"
                       }`}
                     >
-                      <Film className="w-3 h-3" />
+                      <Film className="w-3 h-3 shrink-0" />
                       <span>GIFs Animados</span>
                     </button>
                     <button
                       onClick={() => setWallpaperFilter("photo")}
-                      className={`px-2.5 py-1 rounded-md flex items-center gap-1 transition-colors ${
+                      className={`px-2.5 py-1 rounded-md flex items-center gap-1 transition-colors shrink-0 whitespace-nowrap ${
                         wallpaperFilter === "photo" ? "bg-white/[0.12] text-white font-bold" : "text-gray-400 hover:text-white"
                       }`}
                     >
-                      <ImageIcon className="w-3 h-3" />
+                      <ImageIcon className="w-3 h-3 shrink-0" />
                       <span>Fotos HD</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Preset Cards Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2.5">
                   {filteredPresets.map((p) => {
                     const isSelected = theme.backgroundType === "preset" && theme.presetId === p.id;
                     return (
@@ -336,10 +336,10 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
               </div>
 
               {/* Custom Direct URL Section with Quick GIF Chips */}
-              <div className="p-4 rounded-xl bg-[#0E0E11] border border-white/[0.08] space-y-3">
-                <div className="flex items-center justify-between">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#0E0E11] border border-white/[0.08] space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <span className="text-xs font-bold text-white flex items-center gap-1.5 font-manrope">
-                    <Link2 className="w-3.5 h-3.5 text-[#FF9F0A]" />
+                    <Link2 className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" />
                     <span>Pegar URL directa (GIF animado o imagen)</span>
                   </span>
                   <span className="text-[10px] text-gray-500 font-mono-code">
@@ -347,13 +347,13 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                   </span>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="url"
                     placeholder="https://media.giphy.com/.../giphy.gif"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
-                    className="flex-1 bg-[#141416] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 font-mono-code outline-none focus:border-[#FF9F0A]"
+                    className="flex-1 min-w-0 bg-[#141416] border border-white/[0.08] rounded-xl px-3 py-2 text-base sm:text-xs text-white placeholder-gray-500 font-mono-code outline-none focus:border-[#FF9F0A]"
                   />
                   <button
                     onClick={handleApplyUrl}
@@ -375,7 +375,7 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                         onClick={() => handleQuickUrl(q.url)}
                         className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-[#FF9F0A]/15 border border-white/[0.08] hover:border-[#FF9F0A]/30 text-[10px] text-gray-300 hover:text-[#FF9F0A] font-mono-code transition-colors flex items-center gap-1"
                       >
-                        <Film className="w-2.5 h-2.5 opacity-70" />
+                        <Film className="w-2.5 h-2.5 opacity-70 shrink-0" />
                         <span>{q.name}</span>
                       </button>
                     ))}
@@ -384,10 +384,10 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
               </div>
 
               {/* Upload Local Image or Animated GIF */}
-              <div className="p-4 rounded-xl bg-[#0E0E11] border border-white/[0.08] space-y-3">
-                <div className="flex items-center justify-between">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#0E0E11] border border-white/[0.08] space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <span className="text-xs font-bold text-white flex items-center gap-1.5 font-manrope">
-                    <Upload className="w-3.5 h-3.5 text-[#FF9F0A]" />
+                    <Upload className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" />
                     <span>Subir archivo GIF o foto desde tu equipo</span>
                   </span>
                   <span className="text-[10px] text-gray-500 font-mono-code">
@@ -402,19 +402,19 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                 {/* Upload Active Card if user uploaded file */}
                 {theme.backgroundType === "upload" && uploadedPreviewUrl && (
                   <div className="p-3 rounded-xl bg-[#141416] border border-[#FF9F0A]/30 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div 
                         className="w-12 h-12 rounded-lg bg-cover bg-center border border-white/20 shrink-0"
                         style={{ backgroundImage: `url(${uploadedPreviewUrl})` }}
                       />
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#30D158]" />
-                          <span className="text-xs font-bold text-white font-manrope">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#30D158] shrink-0" />
+                          <span className="text-xs font-bold text-white font-manrope truncate">
                             {theme.uploadedFileName || "Archivo subido activo"}
                           </span>
                         </div>
-                        <span className="text-[10px] text-gray-400 font-mono-code">
+                        <span className="text-[10px] text-gray-400 font-mono-code block truncate">
                           {theme.isGif ? "GIF Animado" : "Imagen HD"} • {theme.uploadedFileSize || "Local IndexedDB"}
                         </span>
                       </div>
@@ -422,17 +422,17 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
 
                     <button
                       onClick={handleRemoveUploaded}
-                      className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-[#FF453A] border border-red-500/20 text-xs font-bold font-manrope flex items-center gap-1.5 transition-colors"
+                      className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-[#FF453A] border border-red-500/20 text-xs font-bold font-manrope flex items-center gap-1.5 transition-colors shrink-0"
                       title="Eliminar fondo personalizado"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5 shrink-0" />
                       <span>Quitar</span>
                     </button>
                   </div>
                 )}
 
-                <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-white/[0.15] hover:border-[#FF9F0A]/50 bg-[#141416] hover:bg-[#1B1B1E] cursor-pointer transition-all text-xs font-bold text-gray-300 hover:text-white">
-                  <Upload className="w-4 h-4 text-[#FF9F0A]" />
+                <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-white/[0.15] hover:border-[#FF9F0A]/50 bg-[#141416] hover:bg-[#1B1B1E] cursor-pointer transition-all text-xs font-bold text-gray-300 hover:text-white text-center">
+                  <Upload className="w-4 h-4 text-[#FF9F0A] shrink-0" />
                   <span>
                     {isUploading ? "Guardando en el navegador..." : "Seleccionar archivo GIF o Imagen (máx 15 MB)"}
                   </span>
@@ -596,18 +596,18 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3.5 border-t border-white/[0.08] bg-[#18181B]/80 flex items-center justify-between">
+        <div className="px-3.5 sm:px-5 py-3 sm:py-3.5 border-t border-white/[0.08] bg-[#18181B]/80 flex items-center justify-between gap-2">
           <button
             onClick={handleReset}
             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Restablecer por defecto</span>
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+            <span>Restablecer</span>
           </button>
 
           <button
             onClick={onClose}
-            className="pf-btn-primary px-5 py-2 text-xs font-bold font-manrope"
+            className="pf-btn-primary px-4 sm:px-5 py-2 text-xs font-bold font-manrope shrink-0"
           >
             Listo y Guardar
           </button>

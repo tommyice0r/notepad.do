@@ -77,49 +77,51 @@ export default function Landing() {
         </div>
 
         {/* Hero Title */}
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight max-w-4xl text-balance leading-[1.08] mb-6 font-manrope">
+        <h1 className="text-3xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight max-w-4xl text-balance leading-[1.1] mb-5 sm:mb-6 font-manrope">
           El bloc de notas más rápido de la web.
         </h1>
 
         {/* Hero Subtitle */}
-        <p className="text-base sm:text-xl text-gray-400 max-w-2xl text-balance leading-relaxed mb-8">
+        <p className="text-sm sm:text-xl text-gray-400 max-w-2xl text-balance leading-relaxed mb-7 sm:mb-8">
           Escribe apuntes, presupuestos con suma automática o fragmentos de código al instante. Sin registros obligatorios, con guardado en tiempo real y bloqueo por clave.
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto mb-10 sm:mb-12">
           <button
             onClick={handleStartNew}
-            className="pf-btn-primary px-8 py-3.5 text-base font-extrabold flex items-center gap-2 shadow-[0_8px_30px_rgba(255,130,0,0.35)] active:scale-95"
+            className="pf-btn-primary px-6 sm:px-8 py-3.5 text-sm sm:text-base font-extrabold flex items-center justify-center gap-2 shadow-[0_8px_30px_rgba(255,130,0,0.35)] active:scale-95"
           >
             <span>Empezar a escribir ahora</span>
-            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            <ArrowRight className="w-4 h-4 stroke-[2.5] shrink-0" />
           </button>
 
           <a
             href="#demo"
-            className="pf-btn-secondary px-6 py-3.5 text-base font-bold flex items-center gap-2"
+            className="pf-btn-secondary px-6 py-3.5 text-sm sm:text-base font-bold flex items-center justify-center gap-2"
           >
             Ver demo en vivo
           </a>
         </div>
 
         {/* 3. INTERACTIVE MINI DEMO PREVIEW (ProxiesFood .pm-box style) */}
-        <div id="demo" className="w-full max-w-[960px] pf-panel overflow-hidden shadow-2xl text-left border border-white/[0.1] my-4">
+        <div id="demo" className="w-full max-w-[960px] pf-panel overflow-hidden shadow-2xl text-left border border-white/[0.1] my-2 sm:my-4">
           
           {/* Card Top Toolbar */}
-          <div className="px-4 py-3 bg-[#141416] border-b border-white/[0.08] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500/60 inline-block"></span>
-              <span className="w-3 h-3 rounded-full bg-yellow-500/60 inline-block"></span>
-              <span className="w-3 h-3 rounded-full bg-green-500/60 inline-block"></span>
-              <span className="ml-2 text-xs font-mono-code text-gray-400">notepad.do/ejemplo-demo</span>
+          <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-[#141416] border-b border-white/[0.08] flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/60 inline-block shrink-0"></span>
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500/60 inline-block shrink-0"></span>
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500/60 inline-block shrink-0"></span>
+              <span className="ml-1 sm:ml-2 text-[11px] sm:text-xs font-mono-code text-gray-400 truncate">
+                notepad.do/ejemplo-demo
+              </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <span className="pf-pill pf-pill-ok text-[10px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#30D158]"></span>
-                <span>Guardado</span>
+                <span className="hidden sm:inline">Guardado</span>
               </span>
               <button
                 onClick={handleCopyDemo}
@@ -132,20 +134,20 @@ export default function Landing() {
           </div>
 
           {/* Editor Surface */}
-          <div className="p-6 bg-[#070708] min-h-[160px] font-mono-code text-xs sm:text-sm leading-relaxed">
+          <div className="p-4 sm:p-6 bg-[#070708] min-h-[160px] font-mono-code text-xs sm:text-sm leading-relaxed">
             <textarea
               value={demoText}
               onChange={e => setDemoText(e.target.value)}
               rows="4"
-              className="w-full bg-transparent text-[#EDEDED] resize-none outline-none font-mono-code leading-relaxed"
+              className="w-full bg-transparent text-[#EDEDED] text-base sm:text-sm resize-none outline-none font-mono-code leading-relaxed"
               placeholder="Escribe algo aquí para probar..."
             />
-            <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-gray-400 font-mono-code">
+            <div className="mt-3 pt-3 border-t border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-gray-400 font-mono-code">
               <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A]" />
+                <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" />
                 <span>Cálculo automático de sumas tipo Excel, formato JSON y limpieza de enlaces.</span>
               </span>
-              <button onClick={handleStartNew} className="text-[#FF9F0A] hover:underline font-bold font-manrope">
+              <button onClick={handleStartNew} className="text-[#FF9F0A] hover:underline font-bold font-manrope shrink-0">
                 Abrir en pantalla completa →
               </button>
             </div>

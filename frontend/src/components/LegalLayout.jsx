@@ -48,15 +48,15 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
       </header>
 
       {/* Main Content Area */}
-      <main className="w-full max-w-[1200px] mx-auto flex-1 flex flex-col md:flex-row gap-6 mb-8">
+      <main className="w-full max-w-[1200px] mx-auto flex-1 flex flex-col md:flex-row gap-4 md:gap-6 mb-8">
         
-        {/* Left Sidebar Navigation */}
+        {/* Left Sidebar Navigation (Horizontal pill strip on mobile, sticky vertical sidebar on desktop) */}
         <aside className="w-full md:w-[260px] shrink-0">
-          <div className="pf-panel p-3 sticky top-6">
-            <span className="px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block">
+          <div className="pf-panel p-2.5 md:p-3 md:sticky md:top-6">
+            <span className="hidden md:block px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-gray-500">
               Documentación y Legal
             </span>
-            <nav className="flex flex-col gap-1 mt-1">
+            <nav className="flex md:flex-col gap-1.5 md:gap-1 overflow-x-auto no-scrollbar md:mt-1">
               {links.map((item) => {
                 const Icon = item.icon;
                 const active = location.pathname === item.to;
@@ -64,20 +64,20 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap ${
                       active
                         ? "bg-[#FF9F0A]/15 text-[#FF9F0A] border border-[#FF9F0A]/30 shadow-sm"
                         : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
                     }`}
                   >
-                    <Icon className="w-4 h-4 shrink-0" />
+                    <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
                     <span>{item.label}</span>
                   </Link>
                 );
               })}
             </nav>
 
-            <div className="mt-6 pt-4 border-t border-white/[0.06] px-3">
+            <div className="hidden md:block mt-6 pt-4 border-t border-white/[0.06] px-3">
               <span className="text-[11px] text-gray-500 block leading-relaxed">
                 Notepad.do cumple con las políticas de editores de Google AdSense y normativas RGPD / CCPA.
               </span>
@@ -86,9 +86,9 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
         </aside>
 
         {/* Right Article Container */}
-        <article className="flex-1 pf-panel p-6 sm:p-10 text-sm leading-relaxed text-gray-300">
-          <header className="border-b border-white/[0.08] pb-6 mb-8">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-manrope">
+        <article className="flex-1 pf-panel p-4 sm:p-6 md:p-10 text-sm leading-relaxed text-gray-300">
+          <header className="border-b border-white/[0.08] pb-4 sm:pb-6 mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight font-manrope">
               {title}
             </h1>
             {subtitle && (

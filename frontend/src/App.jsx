@@ -154,14 +154,14 @@ function EditorEditorialGuide() {
     <section
       aria-label="Guía de uso y documentación de Notepad.do"
       style={{ contentVisibility: "auto", containIntrinsicSize: "420px" }}
-      className="w-full max-w-[1300px] mx-auto mt-8 mb-4 bg-[#101012]/90 border border-white/[0.07] rounded-2xl p-5 sm:p-7 text-gray-300 shadow-lg"
+      className="w-full max-w-[1300px] mx-auto mt-5 sm:mt-8 mb-4 bg-[#101012]/90 border border-white/[0.07] rounded-2xl p-4 sm:p-7 text-gray-300 shadow-lg"
     >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-white/[0.07]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 sm:pb-5 border-b border-white/[0.07]">
         <div>
-          <span className="inline-block text-[11px] font-extrabold uppercase tracking-wider text-[#FF9F0A] bg-[#FF9F0A]/10 border border-[#FF9F0A]/20 px-2.5 py-0.5 rounded-full mb-2">
+          <span className="inline-block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-[#FF9F0A] bg-[#FF9F0A]/10 border border-[#FF9F0A]/20 px-2.5 py-0.5 rounded-full mb-2">
             Guía de Productividad y Documentación
           </span>
-          <h1 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+          <h1 className="text-base sm:text-xl font-extrabold text-white tracking-tight leading-snug">
             Notepad.do — Bloc de Notas en la Nube, Editor de Código y Hoja de Cálculo Reactiva
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 mt-1 max-w-3xl leading-relaxed">
@@ -172,13 +172,13 @@ function EditorEditorialGuide() {
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Link
             to="/info"
-            className="text-xs font-semibold px-3.5 py-2 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.08] transition-colors"
+            className="flex-1 sm:flex-none text-center text-xs font-semibold px-3.5 py-2 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.08] transition-colors"
           >
             Ver guía completa
           </Link>
           <Link
             to="/faq"
-            className="text-xs font-semibold px-3.5 py-2 rounded-lg bg-[#FF9F0A]/15 hover:bg-[#FF9F0A]/25 text-[#FF9F0A] border border-[#FF9F0A]/30 transition-colors"
+            className="flex-1 sm:flex-none text-center text-xs font-semibold px-3.5 py-2 rounded-lg bg-[#FF9F0A]/15 hover:bg-[#FF9F0A]/25 text-[#FF9F0A] border border-[#FF9F0A]/30 transition-colors"
           >
             Preguntas frecuentes
           </Link>
@@ -186,11 +186,11 @@ function EditorEditorialGuide() {
       </div>
 
       {/* 3-Column Feature & Tutorial Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 py-5 border-b border-white/[0.07] text-xs sm:text-sm leading-relaxed">
-        <article className="bg-black/30 border border-white/[0.05] rounded-xl p-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-5 py-4 sm:py-5 border-b border-white/[0.07] text-xs sm:text-sm leading-relaxed">
+        <article className="bg-black/30 border border-white/[0.05] rounded-xl p-3.5 sm:p-4">
           <h2 className="font-bold text-white text-sm mb-2 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#FF9F0A]" />
-            1. URLs Directas y Guardado Automático
+            <span className="w-2 h-2 rounded-full bg-[#FF9F0A] shrink-0" />
+            <span>1. URLs Directas y Guardado Automático</span>
           </h2>
           <p className="text-gray-400">
             Cada nota se identifica mediante su ruta en el navegador (por ejemplo, <code className="text-gray-200 font-mono-code">notepad.do/equipo-sprint</code>).
@@ -198,10 +198,10 @@ function EditorEditorialGuide() {
           </p>
         </article>
 
-        <article className="bg-black/30 border border-white/[0.05] rounded-xl p-4">
+        <article className="bg-black/30 border border-white/[0.05] rounded-xl p-3.5 sm:p-4">
           <h2 className="font-bold text-white text-sm mb-2 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            2. Motor Matemático con Variables
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            <span>2. Motor Matemático con Variables</span>
           </h2>
           <p className="text-gray-400">
             Combina texto libre con presupuestos o conversiones sin abrir una hoja de cálculo. Declara variables como{" "}
@@ -212,10 +212,10 @@ function EditorEditorialGuide() {
           </p>
         </article>
 
-        <article className="bg-black/30 border border-white/[0.05] rounded-xl p-4">
+        <article className="bg-black/30 border border-white/[0.05] rounded-xl p-3.5 sm:p-4">
           <h2 className="font-bold text-white text-sm mb-2 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-sky-400" />
-            3. Herramientas para Desarrolladores y Privacidad
+            <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+            <span>3. Herramientas para Desarrolladores y Privacidad</span>
           </h2>
           <p className="text-gray-400">
             Incluye resaltado automático de fragmentos de código, limpieza rápida de listas (eliminar líneas vacías, ordenar alfabéticamente o quitar duplicados), exportación directa a archivo <code className="text-gray-200 font-mono-code">.txt</code> y protección opcional por contraseña verificada con hash criptográfico.
@@ -227,9 +227,9 @@ function EditorEditorialGuide() {
       <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-400">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span className="font-semibold text-gray-300">Consejos rápidos:</span>
-          <span>• Usa el botón <strong className="text-gray-200">Personalizar URL</strong> para elegir un enlace fácil de recordar.</span>
+          <span>• Usa el botón <strong className="text-gray-200">Compartir</strong> para generar tu código QR.</span>
           <span>• Activa el <strong className="text-gray-200">Candado</strong> si deseas restringir el acceso a tu borrador.</span>
-          <span>• Descarga copias locales con <strong className="text-gray-200">Descargar .TXT</strong>.</span>
+          <span>• Usa el estudio <strong className="text-gray-200">Aa</strong> para transformar mayúsculas o limpiar listas.</span>
         </div>
         <div className="flex items-center gap-3 shrink-0 text-gray-400">
           <Link to="/acerca-de" className="hover:text-white underline underline-offset-4 transition-colors">
@@ -248,7 +248,7 @@ function EditorEditorialGuide() {
 // Editor Note Page (Clean layout without manual banner slots until AdSense approval)
 function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
   return (
-    <div className="min-h-screen bg-[#060607] text-[#EDEDED] font-manrope flex flex-col justify-between p-2 sm:p-4 md:p-6">
+    <div className="min-h-dvh bg-[#060607] text-[#EDEDED] font-manrope flex flex-col justify-between p-1.5 sm:p-4 md:p-6">
       {/* Optional System Announcement Banner configured in Admin */}
       {appConfig?.site_announcement && (
         <div className="w-full max-w-[1300px] mx-auto mb-2 px-4 py-2 rounded-xl bg-[#FF9F0A]/10 border border-[#FF9F0A]/25 text-center text-xs font-medium text-[#FF9F0A]">
@@ -257,7 +257,7 @@ function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
       )}
 
       {/* CENTRAL NOTEPAD CONTAINER */}
-      <main className="w-full max-w-[1300px] mx-auto flex-1 flex flex-col my-2">
+      <main className="w-full max-w-[1300px] mx-auto flex-1 flex flex-col my-1 sm:my-2">
         <Editor
           unlockPrice={appConfig?.unlock_price_usd}
           onStatusChange={onEditorStatusChange}
@@ -268,9 +268,9 @@ function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
       {!editorStatus?.isLocked && <EditorEditorialGuide />}
 
       {/* Minimal Compliance Footer */}
-      <footer className="w-full max-w-[1300px] mx-auto pt-3 pb-1 text-center text-[11px] text-gray-500 flex flex-wrap items-center justify-between px-2 gap-2 border-t border-white/[0.04]">
+      <footer className="w-full max-w-[1300px] mx-auto pt-3 pb-2 text-center text-[11px] text-gray-500 flex flex-col sm:flex-row items-center justify-between px-2 gap-2 border-t border-white/[0.04]">
         <span>© {new Date().getFullYear()} Notepad.do — El bloc de notas rápido en la nube</span>
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3.5">
+        <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 sm:gap-3.5">
           <Link to="/nueva" className="hover:text-gray-300 transition-colors">Nuevo</Link>
           <span>·</span>
           <Link to="/info" className="hover:text-gray-300 transition-colors">Guía</Link>

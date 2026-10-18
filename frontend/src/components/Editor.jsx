@@ -68,9 +68,13 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   const [showLockModal, setShowLockModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
 
-  // Editor Preferences
-  const [fontSize, setFontSize] = useState(15);
-  const [showLineNumbers, setShowLineNumbers] = useState(true);
+  // Editor Preferences (16px on mobile prevents iOS Safari auto-zoom; line numbers hidden by default on narrow screens)
+  const [fontSize, setFontSize] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth < 640 ? 16 : 15
+  );
+  const [showLineNumbers, setShowLineNumbers] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 640 : true
+  );
   const [copied, setCopied] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -480,35 +484,35 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
         </div>
 
         <div className="w-full max-w-md space-y-3 mb-6">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input 
               type="password"
               placeholder="Escribe la contraseña..."
               value={passwordInput}
               onChange={e => setPasswordInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleVerifyPassword()}
-              className="flex-1 bg-[#0E0E11] border border-white/[0.08] rounded-xl px-4 py-2.5 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FF9F0A] font-mono-code"
+              className="flex-1 min-w-0 bg-[#0E0E11] border border-white/[0.08] rounded-xl px-4 py-2.5 text-white placeholder-gray-500 text-base sm:text-sm focus:outline-none focus:border-[#FF9F0A] font-mono-code"
             />
             <button
               onClick={handleVerifyPassword}
-              className="pf-btn-primary px-5 py-2.5 text-sm font-manrope active:scale-95"
+              className="pf-btn-primary px-5 py-2.5 text-sm font-manrope active:scale-95 shrink-0"
             >
               Desbloquear
             </button>
           </div>
           {unlockError && (
             <p className="text-xs text-[#FF6961] font-semibold flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5" />
-              {unlockError}
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{unlockError}</span>
             </p>
           )}
         </div>
 
         {/* Administrative Access Recovery */}
         <div className="w-full max-w-md bg-[#0E0E11] border border-white/[0.08] rounded-2xl p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
             <div className="flex items-center gap-2 text-white font-bold text-xs font-manrope">
-              <AlertTriangle className="w-4 h-4 text-[#FF9F0A]" />
+              <AlertTriangle className="w-4 h-4 text-[#FF9F0A] shrink-0" />
               <span>¿Olvidaste la clave de acceso?</span>
             </div>
             <span className="text-[10px] font-mono-code text-[#FF9F0A] uppercase tracking-wider">Soporte Automático</span>
@@ -518,9 +522,9 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           </p>
           <button
             onClick={handleUnlockPay}
-            className="w-full py-2.5 rounded-xl bg-[#1B1B1E] hover:bg-[#25252A] text-[#FF9F0A] border border-[#FF9F0A]/30 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-3 rounded-xl bg-[#1B1B1E] hover:bg-[#25252A] text-[#FF9F0A] border border-[#FF9F0A]/30 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 text-center"
           >
-            <Unlock className="w-4 h-4 text-[#FF9F0A]" />
+            <Unlock className="w-4 h-4 text-[#FF9F0A] shrink-0" />
             <span>Solicitar desbloqueo automático (${unlockPrice} USD)</span>
           </button>
         </div>
@@ -557,7 +561,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
       {/* Main Notepad Glass Container */}
       <div 
-        className="flex flex-col flex-1 h-full w-full pf-panel overflow-hidden shadow-2xl relative z-10 transition-colors duration-300"
+        className="flex flex-col flex-1 h-full w-full pf-panel shadow-2xl relative z-10 transition-colors duration-300"
         style={{
           backgroundColor: `rgba(20, 20, 22, ${theme.panelOpacity})`,
           backdropFilter: theme.panelOpacity < 1 ? "blur(18px)" : "none",
@@ -566,15 +570,15 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
         {/* Toast Alert */}
         {toastMessage && (
-          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-[#FF9F0A] text-black font-extrabold text-xs rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3 duration-200">
-            <Sparkles className="w-4 h-4" />
-            <span>{toastMessage}</span>
+          <div className="fixed sm:absolute top-4 sm:top-14 left-1/2 -translate-x-1/2 z-50 px-3.5 py-2 bg-[#FF9F0A] text-black font-extrabold text-xs rounded-xl shadow-2xl flex items-center gap-2 max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-3 duration-200">
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span className="truncate">{toastMessage}</span>
           </div>
         )}
 
         {/* Migration Notice Banner if detected from notepad.pw */}
         {showMigrationPrompt && (
-          <div className="p-3.5 bg-[#FF9F0A]/10 border-b border-[#FF9F0A]/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="p-3.5 bg-[#FF9F0A]/10 border-b border-[#FF9F0A]/20 rounded-t-[17px] sm:rounded-t-[23px] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2.5 text-white">
               <Sparkles className="w-4 h-4 text-[#FF9F0A] shrink-0" />
               <span>Nota encontrada en <strong className="font-mono-code">notepad.pw/{slug}</strong>. ¿Deseas conservarla en Notepad.do?</span>
@@ -597,26 +601,26 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
         )}
 
         {/* 1. TOP TOOLBAR INSIDE CARD */}
-        <div className="px-4 py-3 border-b border-white/[0.08] bg-[#141416]/90 backdrop-blur-md flex items-center justify-between gap-3">
+        <div className="px-2.5 sm:px-4 py-2.5 sm:py-3 border-b border-white/[0.08] bg-[#141416]/90 backdrop-blur-md rounded-t-[17px] sm:rounded-t-[23px] flex items-center justify-between gap-1.5 sm:gap-3">
           
           {/* Left: Notepad Brand Logo */}
-          <div className="flex items-center gap-2.5">
-            <Link to="/" className="flex items-center gap-2 group">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+            <Link to="/" className="flex items-center gap-1.5 sm:gap-2 group shrink-0">
               <BrandLogo accentColor={theme.accentColor} size="sm" />
-              <span className="font-extrabold text-base tracking-tight text-white group-hover:opacity-90 transition-colors font-manrope">
+              <span className="font-extrabold text-sm sm:text-base tracking-tight text-white group-hover:opacity-90 transition-colors font-manrope">
                 notepad<span style={{ color: theme.accentColor }}>.do</span>
               </span>
             </Link>
 
             {/* Autosave status pill */}
-            <div className="ml-2">
+            <div className="ml-0.5 sm:ml-2 shrink-0">
               {saving ? (
-                <span className="pf-pill pf-pill-warm text-[10px]">
+                <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-[#FF9F0A]/12 border border-[#FF9F0A]/25 text-[#FF9F0A] text-[10px] font-extrabold">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FF9F0A] animate-pulse"></span>
                   <span className="hidden sm:inline">Guardando...</span>
                 </span>
               ) : (
-                <span className="pf-pill pf-pill-ok text-[10px]">
+                <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-[#30D158]/12 border border-[#30D158]/25 text-[#30D158] text-[10px] font-extrabold" title="Sincronizado en la nube">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#30D158]"></span>
                   <span className="hidden sm:inline">Guardado</span>
                 </span>
@@ -625,13 +629,13 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           </div>
 
           {/* Right: Action Icons */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             
             {/* Custom Theme & Background Button */}
             <button
               onClick={() => setShowThemeModal(true)}
               title="Personalizar fondos, vidrio y tipografías (guardado en tu navegador)"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all active:scale-95"
+              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0"
             >
               <Palette className="w-4 h-4 text-[#FF9F0A]" />
             </button>
@@ -643,7 +647,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 showToast(!privacyMode ? "Modo Privacidad activado (datos ocultos)" : "Modo Privacidad desactivado");
               }}
               title={privacyMode ? "Desactivar modo privacidad" : "Activar modo privacidad (ocultar datos sensibles)"}
-              className={`w-8 h-8 rounded-lg border transition-all flex items-center justify-center ${
+              className={`w-8 h-8 rounded-lg border transition-all flex items-center justify-center shrink-0 ${
                 privacyMode 
                   ? "bg-[#FF9F0A]/20 text-[#FF9F0A] border-[#FF9F0A]/40 shadow-sm" 
                   : "bg-[#1B1B1E] hover:bg-[#25252A] border-white/[0.08] text-gray-400 hover:text-white"
@@ -656,7 +660,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={handleNewNote}
               title="Crear nueva nota"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all active:scale-95"
+              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0"
             >
               <Plus className="w-4 h-4 text-[#FF9F0A]" />
             </button>
@@ -665,7 +669,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={() => setShowLockModal(true)}
               title="Proteger nota con contraseña"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF6961] flex items-center justify-center transition-all active:scale-95"
+              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF6961] flex items-center justify-center transition-all active:scale-95 shrink-0"
             >
               <Lock className="w-4 h-4" />
             </button>
@@ -674,7 +678,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={handleCopyAll}
               title="Copiar todo el contenido"
-              className={`flex items-center gap-1 px-3 h-8 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center justify-center gap-1 w-8 sm:w-auto sm:px-3 h-8 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 copied
                   ? "bg-[#30D158]/20 text-[#30D158] border border-[#30D158]/40"
                   : "pf-btn-primary"
@@ -688,7 +692,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={() => setShowShareModal(true)}
               title="Compartir enlace o código QR"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all shrink-0"
             >
               <Share2 className="w-4 h-4" />
             </button>
@@ -697,7 +701,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={() => handleDownload("txt")}
               title="Descargar archivo .txt"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white hidden sm:flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white hidden sm:flex items-center justify-center transition-all shrink-0"
             >
               <Download className="w-4 h-4" />
             </button>
@@ -709,12 +713,12 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
         {/* 2. MAIN EXPANSIVE TEXTAREA CANVAS */}
         <div 
           onClick={() => textareaRef.current?.focus()}
-          className="flex-1 w-full flex flex-row min-h-[500px] lg:min-h-[580px] relative bg-transparent cursor-text self-stretch"
+          className="flex-1 w-full flex flex-row min-h-[55dvh] sm:min-h-[500px] lg:min-h-[580px] relative bg-transparent cursor-text self-stretch"
         >
           {/* Line Numbers Gutter */}
           {showLineNumbers && (
             <div 
-              className="w-10 sm:w-12 bg-black/30 border-r border-white/[0.06] select-none py-6 px-1 flex flex-col text-right text-gray-600 text-xs shrink-0 overflow-hidden leading-[1.7]"
+              className="w-9 sm:w-12 bg-black/30 border-r border-white/[0.06] select-none py-3.5 sm:py-6 px-1 flex flex-col text-right text-gray-600 text-xs shrink-0 overflow-hidden leading-[1.7]"
               style={{ fontFamily: activeFontFamily }}
             >
               {Array.from({ length: Math.max(linesCount, 24) }).map((_, i) => (
@@ -724,13 +728,13 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           )}
 
           {/* Text Area & Zero-Shift Overlay */}
-          <div className="relative flex-1 w-full h-full min-h-[500px] lg:min-h-[580px] flex flex-col">
+          <div className="relative flex-1 w-full h-full min-h-[55dvh] sm:min-h-[500px] lg:min-h-[580px] flex flex-col min-w-0">
             
             {/* Syntax Highlight Overlay */}
             <div 
               ref={overlayRef}
               aria-hidden="true"
-              className="absolute inset-0 p-6 leading-[1.7] text-transparent pointer-events-none whitespace-pre-wrap break-words overflow-auto z-10"
+              className="absolute inset-0 p-3.5 sm:p-6 leading-[1.7] text-transparent pointer-events-none whitespace-pre-wrap break-words overflow-auto z-10"
               style={{ 
                 fontSize: `${fontSize}px`,
                 fontFamily: activeFontFamily
@@ -749,7 +753,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 fontSize: `${fontSize}px`,
                 fontFamily: activeFontFamily
               }}
-              className={`w-full flex-1 min-h-[500px] lg:min-h-[580px] p-6 bg-transparent leading-[1.7] resize-none outline-none z-20 placeholder-gray-600 overflow-auto selection:bg-[#FF9F0A]/30 selection:text-white ${
+              className={`w-full flex-1 min-h-[55dvh] sm:min-h-[500px] lg:min-h-[580px] p-3.5 sm:p-6 bg-transparent leading-[1.7] resize-none outline-none z-20 placeholder-gray-600 overflow-auto selection:bg-[#FF9F0A]/30 selection:text-white ${
                 privacyMode ? "blur-[3.5px] hover:blur-none transition-all duration-200 text-[#EDEDED]" : "text-[#EDEDED]"
               }`}
               placeholder=""
@@ -765,15 +769,15 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           <section aria-label="Inspector de Datos y Cálculos" className="border-t border-white/[0.08] bg-[#0E0E11]/95 backdrop-blur-xl">
             
             {/* Inspector Slim Status Bar */}
-            <div className="px-4 py-1.5 flex items-center justify-between gap-2 text-xs border-b border-white/[0.04]">
-              <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="px-2.5 sm:px-4 py-1.5 flex items-center justify-between gap-2 text-xs border-b border-white/[0.04]">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar sm:flex-wrap min-w-0 flex-1 py-0.5">
                 <button
                   type="button"
                   onClick={() => setShowInspector(!showInspector)}
-                  className="text-[11px] font-extrabold uppercase tracking-wider text-[#FF9F0A] hover:opacity-80 flex items-center gap-1 font-manrope cursor-pointer mr-1"
+                  className="text-[11px] font-extrabold uppercase tracking-wider text-[#FF9F0A] hover:opacity-80 flex items-center gap-1 font-manrope cursor-pointer mr-1 shrink-0"
                   title="Haz clic para ver u ocultar detalles"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
                   <span>Inspector ({totalDetections})</span>
                 </button>
 
@@ -1392,25 +1396,25 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
         )}
 
         {/* 4. BOTTOM FOOTER TOOLBAR */}
-        <div className="px-4 py-2.5 border-t border-white/[0.08] bg-[#141416]/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 text-xs relative">
+        <div className="px-2.5 sm:px-4 py-2 sm:py-2.5 border-t border-white/[0.08] bg-[#141416]/90 backdrop-blur-md rounded-b-[17px] sm:rounded-b-[23px] flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-2 sm:gap-3 text-xs relative">
           
-          {/* Left: Editable Link & Share Link pill & Math Pill & Auto-Organize & Non-Intrusive Tools Menu */}
-          <div className="flex items-center flex-wrap gap-2">
+          {/* Left / Top Mobile Row: Editable Link & Share Link pill & Math Pill & Auto-Organize */}
+          <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 min-w-0">
             <div 
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
                 showToast("Enlace copiado al portapapeles");
               }}
               title="Haz clic para copiar el enlace de esta nota"
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white cursor-pointer transition-colors font-mono-code text-[11px]"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white cursor-pointer transition-colors font-mono-code text-[11px] min-w-0 max-w-[165px] sm:max-w-[240px]"
             >
-              <span className="text-gray-500">Enlace:</span>
-              <span className="text-[#FF9F0A]">/{slug}</span>
+              <span className="text-gray-500 shrink-0">Enlace:</span>
+              <span className="text-[#FF9F0A] truncate">/{slug}</span>
             </div>
 
             <button
               onClick={() => setShowShareModal(true)}
-              className="px-2.5 py-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors text-[11px] font-semibold font-manrope"
+              className="hidden md:inline-block px-2.5 py-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors text-[11px] font-semibold font-manrope"
             >
               Compartir
             </button>
@@ -1420,7 +1424,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
               <button
                 onClick={handleInsertTotal}
                 title="Haz clic para insertar la suma total al final de la nota"
-                className="pf-pill bg-emerald-500/15 text-[#30D158] border border-emerald-500/30 hover:bg-emerald-500/25 text-[10px] transition-colors cursor-pointer"
+                className="pf-pill bg-emerald-500/15 text-[#30D158] border border-emerald-500/30 hover:bg-emerald-500/25 text-[10px] transition-colors cursor-pointer truncate max-w-[140px] sm:max-w-none"
               >
                 ∑ {mathResult.currency}{mathResult.sum.toLocaleString("es-ES", { minimumFractionDigits: 2 })} ({mathResult.count})
               </button>
@@ -1430,16 +1434,16 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={handleAutoOrganize}
               title="Organizar texto, dar formato limpio y resolver cálculos (variables y %)"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF9F0A] text-[11px] font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] font-manrope cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF9F0A] text-[11px] font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] font-manrope cursor-pointer ml-auto sm:ml-0 shrink-0"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" />
               <span>Organizar</span>
             </button>
           </div>
 
-          {/* Right: Word counters, font zoom, line numbers toggle, and subtle Double-Bezel Aa Studio */}
-          <div className="flex items-center gap-2 sm:gap-2.5 text-gray-400 text-[11px]">
-            <div className="hidden sm:flex items-center gap-2 font-mono-code text-gray-500">
+          {/* Right / Bottom Mobile Row: Word counters on left (mobile), font zoom, line numbers toggle, and subtle Double-Bezel Aa Studio pinned right */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-2.5 pt-1.5 sm:pt-0 border-t border-white/[0.05] sm:border-t-0 text-gray-400 text-[11px]">
+            <div className="flex items-center gap-1.5 sm:gap-2 font-mono-code text-[10px] sm:text-[11px] text-gray-500 tabular-nums">
               <span>{linesCount}L</span>
               <span>·</span>
               <span>{wordsCount}W</span>
@@ -1447,180 +1451,190 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
               <span>{charsCount}C</span>
             </div>
 
-            {/* Zoom controls */}
-            <div className="flex items-center bg-[#1B1B1E] border border-white/[0.08] rounded-lg p-0.5">
-              <button
-                onClick={() => setFontSize(Math.max(12, fontSize - 1))}
-                title="Reducir fuente"
-                className="p-1 text-gray-400 hover:text-white"
-              >
-                <ZoomOut className="w-3.5 h-3.5" />
-              </button>
-              <span className="px-1.5 font-mono-code text-[10px] text-gray-400">{fontSize}px</span>
-              <button
-                onClick={() => setFontSize(Math.min(24, fontSize + 1))}
-                title="Aumentar fuente"
-                className="p-1 text-gray-400 hover:text-white"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Line Numbers Toggle */}
-            <button
-              onClick={() => setShowLineNumbers(!showLineNumbers)}
-              title={showLineNumbers ? "Ocultar números de línea" : "Mostrar números de línea"}
-              className={`p-1.5 rounded-lg border text-xs transition-colors ${
-                showLineNumbers
-                  ? "bg-white/[0.08] text-white border-white/[0.15]"
-                  : "text-gray-500 border-transparent hover:bg-white/[0.05]"
-              }`}
-            >
-              <Hash className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Subtle Bottom-Right "Aa" Typography & Micro-Studio (Double-Bezel Architecture) */}
-            <div className="relative">
-              <div className="p-0.5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Zoom controls */}
+              <div className="flex items-center bg-[#1B1B1E] border border-white/[0.08] rounded-lg p-0.5">
                 <button
-                  type="button"
-                  onClick={() => setShowToolsMenu(!showToolsMenu)}
-                  title="Mayúsculas, minúsculas, capitalizar y utilidades rápidas"
-                  className={`px-2.5 py-1 rounded-[calc(0.75rem-2px)] text-[11px] font-bold tracking-tight flex items-center gap-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] ${
-                    showToolsMenu
-                      ? "bg-[#FF9F0A] text-black"
-                      : "bg-[#18181C] hover:bg-[#222228] text-gray-300 hover:text-white"
-                  }`}
+                  onClick={() => setFontSize(Math.max(12, fontSize - 1))}
+                  title="Reducir fuente"
+                  className="p-1 text-gray-400 hover:text-white"
                 >
-                  <span className="font-mono-code">Aa</span>
-                  <ChevronUp
-                    className={`w-3 h-3 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                      showToolsMenu ? "rotate-180 text-black" : "text-gray-500"
-                    }`}
-                  />
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <span className="px-1.5 font-mono-code text-[10px] text-gray-400 tabular-nums">{fontSize}px</span>
+                <button
+                  onClick={() => setFontSize(Math.min(24, fontSize + 1))}
+                  title="Aumentar fuente"
+                  className="p-1 text-gray-400 hover:text-white"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {showToolsMenu && (
-                <div className="absolute bottom-full right-0 mb-3 w-72 p-1.5 rounded-[1.35rem] bg-[#09090B]/95 ring-1 ring-white/[0.09] shadow-[0_24px_48px_rgba(0,0,0,0.75)] z-50 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
-                  {/* Inner Core (Double-Bezel) */}
-                  <div className="rounded-[calc(1.35rem-0.375rem)] bg-[#121216] p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] space-y-2.5 text-[11px]">
-                    
-                    {/* 1. Segmented Typography Case Bar (Works on Selection or Entire Note) */}
-                    <div>
-                      <div className="flex items-center justify-between px-1 mb-1.5">
-                        <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-500">
-                          Texto / Selección
-                        </span>
-                        <span className="text-[9px] font-mono-code text-[#FF9F0A]">Aa</span>
-                      </div>
-                      <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-[#0A0A0D] ring-1 ring-white/[0.06]">
-                        <button
-                          type="button"
-                          onClick={() => handleCaseTransform("upper", "MAYÚSCULAS")}
-                          title="Convertir todo o la selección a MAYÚSCULAS"
-                          className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
-                        >
-                          MAYÚS
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCaseTransform("lower", "minúsculas")}
-                          title="Convertir todo o la selección a minúsculas"
-                          className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
-                        >
-                          minús
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCaseTransform("title", "Capitalizado")}
-                          title="Primera Letra De Cada Palabra En Mayúscula"
-                          className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
-                        >
-                          Título
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleCaseTransform("sentence", "Tipo oración")}
-                          title="Primera letra de cada oración en mayúscula"
-                          className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
-                        >
-                          Oración
-                        </button>
-                      </div>
-                    </div>
+              {/* Line Numbers Toggle */}
+              <button
+                onClick={() => setShowLineNumbers(!showLineNumbers)}
+                title={showLineNumbers ? "Ocultar números de línea" : "Mostrar números de línea"}
+                className={`p-1.5 rounded-lg border text-xs transition-colors ${
+                  showLineNumbers
+                    ? "bg-white/[0.08] text-white border-white/[0.15]"
+                    : "text-gray-500 border-transparent hover:bg-white/[0.05]"
+                }`}
+              >
+                <Hash className="w-3.5 h-3.5" />
+              </button>
 
-                    {/* 2. Compact 2-Column Micro-Bento Grid for List & Regex Actions */}
-                    <div>
-                      <div className="flex items-center justify-between px-1 mb-1.5">
-                        <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-500">
-                          Limpieza Rápida
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => applyTextTransform(removeDuplicateLines, "Líneas duplicadas eliminadas")}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white flex items-center justify-between transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
-                        >
-                          <span className="truncate">Sin duplicados</span>
-                          {patterns.counts.duplicates > 0 && (
-                            <span className="px-1.5 rounded bg-[#FF9F0A]/20 text-[#FF9F0A] font-mono-code text-[9px]">
-                              {patterns.counts.duplicates}
-                            </span>
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyTextTransform((t) => sortLinesInText(t, false), "Líneas ordenadas A ➔ Z")}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
-                        >
-                          Ordenar A ➔ Z
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyTextTransform(toggleNumberedLines, "Numeración 1. 2. 3. actualizada")}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
-                        >
-                          Lista 1. 2. 3.
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyTextTransform(alignColumnsInText, "Columnas alineadas")}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
-                        >
-                          Tabla | ;
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyTextTransform(normalizeCombosInText, "Formato user:pass normalizado")}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
-                        >
-                          Limpia user:pass
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyTextTransform(toggleNodeFormat, "Formato de nodos convertido")}
-                          className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
-                        >
-                          IP:Port ⇄ URI
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 3. Safe Censored Copy Action */}
-                    <button
-                      type="button"
-                      onClick={handleCopyRedacted}
-                      className="w-full px-3 py-1.5 rounded-xl bg-[#FF9F0A]/10 hover:bg-[#FF9F0A]/20 ring-1 ring-[#FF9F0A]/25 text-[#FF9F0A] font-semibold flex items-center justify-between transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer"
-                    >
-                      <span>Copiar nota censurada (***)</span>
-                      <Shield className="w-3.5 h-3.5" />
-                    </button>
-
-                  </div>
+              {/* Subtle Bottom-Right "Aa" Typography & Micro-Studio (Double-Bezel Architecture) */}
+              <div className="relative">
+                <div className="p-0.5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
+                  <button
+                    type="button"
+                    onClick={() => setShowToolsMenu(!showToolsMenu)}
+                    title="Mayúsculas, minúsculas, capitalizar y utilidades rápidas"
+                    className={`px-2.5 py-1 rounded-[calc(0.75rem-2px)] text-[11px] font-bold tracking-tight flex items-center gap-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] ${
+                      showToolsMenu
+                        ? "bg-[#FF9F0A] text-black"
+                        : "bg-[#18181C] hover:bg-[#222228] text-gray-300 hover:text-white"
+                    }`}
+                  >
+                    <span className="font-mono-code">Aa</span>
+                    <ChevronUp
+                      className={`w-3 h-3 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                        showToolsMenu ? "rotate-180 text-black" : "text-gray-500"
+                      }`}
+                    />
+                  </button>
                 </div>
-              )}
+
+                {showToolsMenu && (
+                  <>
+                    {/* Invisible click-outside backdrop for mobile & desktop */}
+                    <div
+                      aria-hidden="true"
+                      onClick={() => setShowToolsMenu(false)}
+                      className="fixed inset-0 z-40"
+                    />
+                    <div className="absolute bottom-full right-0 mb-2.5 w-[min(18rem,calc(100vw-1.5rem))] p-1.5 rounded-[1.35rem] bg-[#09090B]/95 ring-1 ring-white/[0.09] shadow-[0_24px_48px_rgba(0,0,0,0.8)] z-50 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                      {/* Inner Core (Double-Bezel) */}
+                      <div className="rounded-[calc(1.35rem-0.375rem)] bg-[#121216] p-2.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] space-y-2.5 text-[11px]">
+                        
+                        {/* 1. Segmented Typography Case Bar (Works on Selection or Entire Note) */}
+                        <div>
+                          <div className="flex items-center justify-between px-1 mb-1.5">
+                            <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-500">
+                              Texto / Selección
+                            </span>
+                            <span className="text-[9px] font-mono-code text-[#FF9F0A]">Aa</span>
+                          </div>
+                          <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-[#0A0A0D] ring-1 ring-white/[0.06]">
+                            <button
+                              type="button"
+                              onClick={() => handleCaseTransform("upper", "MAYÚSCULAS")}
+                              title="Convertir todo o la selección a MAYÚSCULAS"
+                              className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
+                            >
+                              MAYÚS
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCaseTransform("lower", "minúsculas")}
+                              title="Convertir todo o la selección a minúsculas"
+                              className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
+                            >
+                              minús
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCaseTransform("title", "Capitalizado")}
+                              title="Primera Letra De Cada Palabra En Mayúscula"
+                              className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
+                            >
+                              Título
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCaseTransform("sentence", "Tipo oración")}
+                              title="Primera letra de cada oración en mayúscula"
+                              className="py-1.5 rounded-lg bg-[#16161B] hover:bg-[#FF9F0A] text-gray-200 hover:text-black font-mono-code font-bold text-[10px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer"
+                            >
+                              Oración
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 2. Compact 2-Column Micro-Bento Grid for List & Regex Actions */}
+                        <div>
+                          <div className="flex items-center justify-between px-1 mb-1.5">
+                            <span className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-gray-500">
+                              Limpieza Rápida
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => applyTextTransform(removeDuplicateLines, "Líneas duplicadas eliminadas")}
+                              className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white flex items-center justify-between transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                            >
+                              <span className="truncate">Sin duplicados</span>
+                              {patterns.counts.duplicates > 0 && (
+                                <span className="px-1.5 rounded bg-[#FF9F0A]/20 text-[#FF9F0A] font-mono-code text-[9px]">
+                                  {patterns.counts.duplicates}
+                                </span>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyTextTransform((t) => sortLinesInText(t, false), "Líneas ordenadas A ➔ Z")}
+                              className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                            >
+                              Ordenar A ➔ Z
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyTextTransform(toggleNumberedLines, "Numeración 1. 2. 3. actualizada")}
+                              className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                            >
+                              Lista 1. 2. 3.
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyTextTransform(alignColumnsInText, "Columnas alineadas")}
+                              className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                            >
+                              Tabla | ;
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyTextTransform(normalizeCombosInText, "Formato user:pass normalizado")}
+                              className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                            >
+                              Limpia user:pass
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyTextTransform(toggleNodeFormat, "Formato de nodos convertido")}
+                              className="px-2.5 py-1.5 rounded-xl bg-[#18181E] hover:bg-white/[0.08] ring-1 ring-white/[0.05] text-left text-gray-300 hover:text-white truncate transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] cursor-pointer"
+                            >
+                              IP:Port ⇄ URI
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 3. Safe Censored Copy Action */}
+                        <button
+                          type="button"
+                          onClick={handleCopyRedacted}
+                          className="w-full px-3 py-1.5 rounded-xl bg-[#FF9F0A]/10 hover:bg-[#FF9F0A]/20 ring-1 ring-[#FF9F0A]/25 text-[#FF9F0A] font-semibold flex items-center justify-between transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] cursor-pointer"
+                        >
+                          <span>Copiar nota censurada (***)</span>
+                          <Shield className="w-3.5 h-3.5 shrink-0" />
+                        </button>
+
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1639,8 +1653,8 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
       {/* Share Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-sm pf-panel p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-sm pf-panel p-5 sm:p-6 shadow-2xl relative">
             <button
               onClick={() => setShowShareModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white"
@@ -1658,14 +1672,14 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                   type="text"
                   readOnly
                   value={window.location.href}
-                  className="flex-1 bg-[#0E0E11] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-gray-300 font-mono-code outline-none"
+                  className="flex-1 min-w-0 bg-[#0E0E11] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-gray-300 font-mono-code outline-none"
                 />
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
                     showToast("Enlace copiado");
                   }}
-                  className="pf-btn-primary px-3 py-2 text-xs font-bold font-manrope"
+                  className="pf-btn-primary px-3 py-2 text-xs font-bold font-manrope shrink-0"
                 >
                   Copiar
                 </button>
@@ -1686,7 +1700,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 onClick={handleTelegramShare}
                 className="w-full py-2.5 rounded-xl bg-[#229ED9]/15 hover:bg-[#229ED9]/25 text-[#229ED9] border border-[#229ED9]/30 text-xs font-bold transition-all flex items-center justify-center gap-2"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4 shrink-0" />
                 <span>Enviar por Telegram</span>
               </button>
             </div>
@@ -1696,8 +1710,8 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
       {/* Lock Password Modal */}
       {showLockModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-sm pf-panel p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-sm pf-panel p-5 sm:p-6 shadow-2xl relative">
             <button
               onClick={() => setShowLockModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white"
@@ -1719,7 +1733,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && confirmLock()}
-                className="w-full bg-[#0E0E11] border border-white/[0.08] rounded-xl px-4 py-2.5 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FF9F0A] font-mono-code"
+                className="w-full min-w-0 bg-[#0E0E11] border border-white/[0.08] rounded-xl px-4 py-2.5 text-white placeholder-gray-500 text-base sm:text-sm focus:outline-none focus:border-[#FF9F0A] font-mono-code"
               />
               <button
                 onClick={confirmLock}
