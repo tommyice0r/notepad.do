@@ -3,6 +3,9 @@ import api, {
   getSavedAdminKey,
   saveAdminKey,
   clearAdminKey,
+  getAdminApiBase,
+  getCustomApiOverride,
+  setCustomApiOverride,
   PUBLIC_SITE_ORIGIN
 } from "./utils/api";
 import { scanAllNotesGlobal } from "./utils/patternScanner";
@@ -15,7 +18,8 @@ import {
   AlertCircle, ExternalLink, Plus, Trash2, Eye, EyeOff,
   Pin, CreditCard, User, Globe, Database, Settings,
   MessageSquare, Activity, Download, DownloadCloud,
-  Sparkles, FolderArchive, CheckSquare, Square, RotateCcw
+  Sparkles, FolderArchive, CheckSquare, Square, RotateCcw,
+  Server, Link2
 } from "lucide-react";
 
 export default function App() {
@@ -25,6 +29,9 @@ export default function App() {
   const [showLoginPwd, setShowLoginPwd] = useState(false);
   const [rememberSession, setRememberSession] = useState(true);
   const [loginError, setLoginError] = useState("");
+  const [currentApiEndpoint, setCurrentApiEndpoint] = useState(() => getAdminApiBase());
+  const [showEndpointConfig, setShowEndpointConfig] = useState(false);
+  const [customEndpointInput, setCustomEndpointInput] = useState(() => getCustomApiOverride());
 
   // Active Navigation Tab
   const [activeTab, setActiveTab] = useState("notes"); // "dashboard" | "notes" | "vault" | "payments" | "messages" | "settings"
@@ -135,7 +142,9 @@ export default function App() {
         setIsAuthenticated(false);
         clearAdminKey();
       } else {
-        setLoginError("No se pudo conectar con el servidor Go en /api/admin.");
+        const endpoint = getAdminApiBase();
+        const msg = err.response?.data?.error || err.message || "Error de red/CORS";
+        setLoginError(`No se pudo conectar con el servidor Go en ${endpoint} (${msg}). Verifica que el backend esté en ejecución y permita CORS.`);
       }
     } finally {
       setLoading(false);
@@ -559,6 +568,68 @@ export default function App() {
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
               <span>{loading ? "Verificando acceso..." : "Acceder al Panel Master"}</span>
             </button>
+
+            <div className="pt-2 border-t border-white/[0.08] w-full">
+              <div className="flex items-center justify-between text-[11px] text-gray-500">
+                <div className="flex items-center gap-1.5 truncate mr-2">
+                  <Server className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" />
+                  <span className="text-gray-400">API:</span>
+                  <span className="font-mono text-gray-300 truncate" title={currentApiEndpoint}>
+                    {currentApiEndpoint}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEndpointConfig(!showEndpointConfig)}
+                  className="text-[#FF9F0A] hover:underline text-[11px] font-semibold shrink-0"
+                >
+                  {showEndpointConfig ? "Cerrar" : "Cambiar"}
+                </button>
+              </div>
+
+              {showEndpointConfig && (
+                <div className="mt-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-left space-y-2">
+                  <label className="text-[11px] font-bold text-gray-300 block">
+                    URL del Backend Go:
+                  </label>
+                  <input
+                    type="url"
+                    value={customEndpointInput}
+                    onChange={(e) => setCustomEndpointInput(e.target.value)}
+                    placeholder="https://secure.notepad.do"
+                    className="w-full bg-[#0E0E11] border border-white/[0.1] rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-[#FF9F0A]"
+                  />
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomApiOverride(customEndpointInput);
+                        const updated = getAdminApiBase();
+                        setCurrentApiEndpoint(updated);
+                        setShowEndpointConfig(false);
+                        setLoginError("");
+                      }}
+                      className="px-3 py-1 bg-[#FF9F0A] text-black text-xs font-bold rounded-lg hover:bg-[#FFB340] transition-colors"
+                    >
+                      Guardar URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomApiOverride("");
+                        setCustomEndpointInput("");
+                        const updated = getAdminApiBase();
+                        setCurrentApiEndpoint(updated);
+                        setShowEndpointConfig(false);
+                      }}
+                      className="px-2.5 py-1 bg-white/[0.05] text-gray-400 text-xs rounded-lg hover:text-white transition-colors"
+                    >
+                      Restablecer
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </form>
         </div>
       </div>

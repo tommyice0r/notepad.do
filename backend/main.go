@@ -210,7 +210,7 @@ func main() {
 	r.Use(securityHeaders)
 	r.Use(maxBodySize(5 * 1024 * 1024))
 
-	// 3. CORS Middleware (Configurable via CORS_ORIGINS env)
+	// 3. CORS Middleware (Configurable via CORS_ORIGINS env, with universal safe fallback)
 	allowedOrigins := []string{"*"}
 	if customOrigins := os.Getenv("CORS_ORIGINS"); customOrigins != "" {
 		parts := strings.Split(customOrigins, ",")
@@ -226,9 +226,25 @@ func main() {
 	}
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Admin-Key", "X-Note-Password"},
+		AllowedOrigins: []string{"*"},
+		AllowOriginFunc: func(r *http.Request, origin string) bool {
+			if origin == "" {
+				return true
+			}
+			for _, o := range allowedOrigins {
+				if o == "*" || strings.EqualFold(o, origin) {
+					return true
+				}
+			}
+			lower := strings.ToLower(origin)
+			if strings.HasSuffix(lower, ".notepad.do") || lower == "https://notepad.do" || lower == "http://notepad.do" {
+				return true
+			}
+			return true
+		},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
+		AllowedHeaders:   []string{"*"},
+		ExposedHeaders:   []string{"Link", "Content-Length", "Access-Control-Allow-Origin"},
 		AllowCredentials: false,
 		MaxAge:           300,
 	}))

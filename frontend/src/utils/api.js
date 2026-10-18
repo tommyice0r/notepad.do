@@ -5,8 +5,9 @@ import axios from "axios";
  * Supports:
  * 1. Dokploy Runtime Environment: window.__APP_CONFIG__.VITE_API_URL
  * 2. Vite Build-Time Environment: import.meta.env.VITE_API_URL
- * 3. Localhost dev server fallback (ports 5173 / 5174 / 3000)
- * 4. Automatic normalization: accepts "https://api.domain.com", "https://api.domain.com/", "https://api.domain.com/api"
+ * 3. Production notepad.do default: https://secure.notepad.do/api
+ * 4. Localhost dev server fallback (ports 5173 / 5174 / 3000)
+ * 5. Automatic normalization: accepts "https://api.domain.com", "https://api.domain.com/", "https://api.domain.com/api"
  *    and ensures it routes cleanly to the backend endpoints.
  */
 export function getApiBaseUrl() {
@@ -22,6 +23,11 @@ export function getApiBaseUrl() {
     return clean;
   }
 
+  // Production notepad.do domains default to secure.notepad.do backend
+  if (typeof window !== "undefined" && window.location.hostname.endsWith("notepad.do")) {
+    return "https://secure.notepad.do/api";
+  }
+
   // Local development fallback
   if (
     typeof window !== "undefined" &&
@@ -30,7 +36,7 @@ export function getApiBaseUrl() {
     return "http://localhost:8080/api";
   }
 
-  // Production default on same origin
+  // Production fallback on same origin
   return "/api";
 }
 
@@ -42,8 +48,9 @@ const api = axios.create({
   timeout: 20000,
 });
 
-// Request interceptor to attach admin key or note password if stored in session
+// Dynamic request interceptor to attach API baseURL and credentials/headers
 api.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl();
   if (typeof window !== "undefined") {
     const adminKey =
       sessionStorage.getItem("notepad_admin_key") ||
