@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
+import api from "./utils/api";
 import Editor from "./components/Editor";
 import Admin from "./components/Admin";
 import CookieConsent, { openCookiePreferences } from "./components/CookieConsent";
@@ -13,11 +14,6 @@ import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
 import Contact from "./pages/Contact";
 import Dmca from "./pages/Dmca";
-
-const API_BASE =
-  typeof window !== "undefined" && window.location.port === "5173"
-    ? "http://localhost:8080"
-    : "";
 
 // Normalize and validate Google AdSense Publisher ID (ca-pub-XXXXXXXXXXXXXXXX)
 function normalizeAdSenseClientId(rawClientId) {
@@ -347,11 +343,11 @@ export default function App() {
   // Load public configuration from backend (/api/config)
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/config`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data && typeof data === "object") {
-          setAppConfig((prev) => ({ ...prev, ...data }));
+    api
+      .get("/config")
+      .then((res) => {
+        if (!cancelled && res?.data && typeof res.data === "object") {
+          setAppConfig((prev) => ({ ...prev, ...res.data }));
         }
       })
       .catch(() => {

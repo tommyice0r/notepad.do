@@ -10,9 +10,12 @@ RUN npm ci
 # Copy frontend source code
 COPY . .
 
-# Optional build-time argument for API URL
+# Optional build-time argument for API URL and AdSense ID
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+
+ARG VITE_ADSENSE_CLIENT_ID
+ENV VITE_ADSENSE_CLIENT_ID=$VITE_ADSENSE_CLIENT_ID
 
 RUN npm run build
 
