@@ -99,39 +99,92 @@ export function calculateExcelSum(text) {
   };
 }
 
-// 4. Evaluate inline math: e.g. "50 * 4 + 20 =" or "= 100 + 40"
+// 4. Extract named numeric variables from lines like "servidor = 45" or "licencia = $120.50"
+export function extractVariables(text) {
+  const vars = {};
+  if (!text) return vars;
+
+  const reserved = new Set([
+    "password", "contraseña", "pass", "clave", "pwd", "secret", "pin",
+    "user", "usuario", "username", "login", "email", "correo", "cuenta",
+    "api_key", "apikey", "token", "bearer", "total", "suma", "sum", "promedio"
+  ]);
+
+  const lines = text.split("\n");
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    // Match "variable_name = $120.50" (not ending in empty "=")
+    const match = line.match(/^([a-zA-Z_][a-zA-Z0-9_]{1,24})\s*[:=]\s*[\$€£¥]?\s*([+-]?\d+(?:[.,]\d+)?)\s*(?:USD|EUR|RD\$|MXN|COP|ARS)?$/i);
+    if (match) {
+      const varName = match[1].toLowerCase();
+      if (!reserved.has(varName)) {
+        const num = parseFloat(match[2].replace(",", "."));
+        if (!isNaN(num) && isFinite(num)) {
+          vars[varName] = num;
+        }
+      }
+    }
+  }
+  return vars;
+}
+
+// Helper to transform percentage expressions and variables into safe arithmetic
+function normalizeMathExpression(rawExpr, vars = {}) {
+  let expr = rawExpr.trim();
+
+  // 1. Replace known variable names with their numeric values
+  expr = expr.replace(/\b([a-zA-Z_][a-zA-Z0-9_]{1,24})\b/g, (full, name) => {
+    const key = name.toLowerCase();
+    return Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : full;
+  });
+
+  // 2. Transform "A + B%" -> "(A * (1 + B / 100))" and "A - B%" -> "(A * (1 - B / 100))"
+  expr = expr.replace(/(\d+(?:\.\d+)?)\s*([\+\-])\s*(\d+(?:\.\d+)?)%/g, "($1 * (1 $2 ($3 / 100)))");
+
+  // 3. Transform remaining "B%" -> "(B / 100)"
+  expr = expr.replace(/(\d+(?:\.\d+)?)%/g, "($1 / 100)");
+
+  return expr;
+}
+
+// 5. Evaluate inline math: e.g. "50 * 4 + 20 =", "servidor + licencia =", "250 + 18% =" or "= 100 + 40"
 export function evaluateInlineMath(text) {
   if (!text) return text;
 
+  const vars = extractVariables(text);
   const lines = text.split("\n");
+
   const processed = lines.map(line => {
-    // Match line ending with = (e.g. "Total: 50 * 4 + 20 =" or "15 + 25 =")
-    const eqMatch = line.match(/^([\s\S]*?)([\d\.\s\+\-\*\/\(\)]+)=\s*$/);
+    // Match line ending with = (e.g. "Total: 50 * 4 + 20 =", "servidor + licencia =", "250 + 18% =")
+    const eqMatch = line.match(/^([\s\S]*?)([a-zA-Z0-9_%\.\s\+\-\*\/\(\)]+)=\s*$/);
     if (eqMatch) {
       const prefix = eqMatch[1];
-      const expr = eqMatch[2].trim();
-      // Ensure expression contains at least one operator (+, -, *, /) and digits
-      if (/[\+\-\*\/]/.test(expr) && /^[\d\.\s\+\-\*\/\(\)]+$/.test(expr)) {
+      const originalExpr = eqMatch[2].trim();
+      const normalizedExpr = normalizeMathExpression(originalExpr, vars);
+
+      // Ensure resolved expression contains only safe numbers/operators
+      if (/[\+\-\*\/]/.test(normalizedExpr) && /^[\d\.\s\+\-\*\/\(\)]+$/.test(normalizedExpr)) {
         try {
-          const evaluated = Function(`"use strict"; return (${expr})`)();
+          const evaluated = Function(`"use strict"; return (${normalizedExpr})`)();
           if (typeof evaluated === "number" && !isNaN(evaluated) && isFinite(evaluated)) {
             const formatted = Math.round(evaluated * 100) / 100;
-            return `${prefix}${expr} = ${formatted}`;
+            return `${prefix}${originalExpr} = ${formatted}`;
           }
         } catch (e) {}
       }
     }
 
-    // Match Excel style lines: "= 100 + 40"
-    const excelMatch = line.match(/^=\s*([\d\.\s\+\-\*\/\(\)]+)$/);
+    // Match Excel style lines: "= 100 + 40" or "= servidor * 12"
+    const excelMatch = line.match(/^=\s*([a-zA-Z0-9_%\.\s\+\-\*\/\(\)]+)$/);
     if (excelMatch) {
-      const expr = excelMatch[1].trim();
-      if (/[\+\-\*\/]/.test(expr) && /^[\d\.\s\+\-\*\/\(\)]+$/.test(expr)) {
+      const originalExpr = excelMatch[1].trim();
+      const normalizedExpr = normalizeMathExpression(originalExpr, vars);
+      if (/[\+\-\*\/]/.test(normalizedExpr) && /^[\d\.\s\+\-\*\/\(\)]+$/.test(normalizedExpr)) {
         try {
-          const evaluated = Function(`"use strict"; return (${expr})`)();
+          const evaluated = Function(`"use strict"; return (${normalizedExpr})`)();
           if (typeof evaluated === "number" && !isNaN(evaluated) && isFinite(evaluated)) {
             const formatted = Math.round(evaluated * 100) / 100;
-            return `= ${formatted} (${expr})`;
+            return `= ${formatted} (${originalExpr})`;
           }
         } catch (e) {}
       }
@@ -143,7 +196,7 @@ export function evaluateInlineMath(text) {
   return processed.join("\n");
 }
 
-// 5. Append formatted total summary to note
+// 6. Append formatted total summary to note
 export function appendTotalSummary(currentContent) {
   const calc = calculateExcelSum(currentContent);
   if (!calc) return currentContent;

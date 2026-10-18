@@ -15,7 +15,15 @@ import {
   autoFormatNotepadContent,
   generateSafeOverlayHtml,
   formatCardNumber,
-  maskCardNumber
+  maskCardNumber,
+  generateTotpCode,
+  removeDuplicateLines,
+  normalizeCombosInText,
+  toggleNodeFormat,
+  alignColumnsInText,
+  sortLinesInText,
+  toggleNumberedLines,
+  redactSensitiveText
 } from "../utils/patternDetector";
 import {
   calculateExcelSum,
@@ -68,9 +76,11 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   const [theme, setTheme] = useState(loadSavedTheme);
   const [showThemeModal, setShowThemeModal] = useState(false);
 
-  // Privacy & Pattern Inspector states
+  // Privacy & Non-Intrusive Pattern Inspector states (collapsed by default)
   const [privacyMode, setPrivacyMode] = useState(false);
-  const [showInspector, setShowInspector] = useState(true);
+  const [showInspector, setShowInspector] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
+  const [totpCodes, setTotpCodes] = useState({});
   const [revealedPasswords, setRevealedPasswords] = useState({});
   const [revealedCards, setRevealedCards] = useState({});
   const [revealedCvv, setRevealedCvv] = useState({});
@@ -85,6 +95,29 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   // Excel-like Math memoized
   const mathResult = useMemo(() => calculateExcelSum(content), [content]);
+
+  // Live 2FA TOTP code ticker (only active when 2FA seeds exist in the note)
+  useEffect(() => {
+    if (!patterns.totpSecrets || patterns.totpSecrets.length === 0) {
+      setTotpCodes({});
+      return;
+    }
+    let active = true;
+    const updateCodes = async () => {
+      const next = {};
+      for (const item of patterns.totpSecrets) {
+        const res = await generateTotpCode(item.secret);
+        if (res) next[item.secret] = res;
+      }
+      if (active) setTotpCodes(next);
+    };
+    updateCodes();
+    const timer = setInterval(updateCodes, 1000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [patterns.totpSecrets]);
 
   // Active Wallpaper / GIF Background URL (supports Presets, Direct URLs & IndexedDB blobs)
   const [activeBgUrl, setActiveBgUrl] = useState(() => getActiveBackgroundUrl(theme) || "");
@@ -321,16 +354,43 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
     URL.revokeObjectURL(url);
   };
 
-  // Smart organizer for credentials, cards, URLs, proxies, JSON, and math
+  // Smart organizer for text, combos, URLs, nodes, JSON, and math (variables + %)
   const handleAutoOrganize = () => {
     if (!content.trim()) return;
-    // 1. Solve inline math like "50 * 4 + 20 = "
     let formatted = evaluateInlineMath(content);
-    // 2. Format cards, credentials, URLs, proxies, JSON
     formatted = autoFormatNotepadContent(formatted);
     setContent(formatted);
     saveNote(formatted);
     showToast("¡Nota organizada y cálculos resueltos!");
+  };
+
+  // Non-intrusive 1-click text enrichment actions
+  const applyTextTransform = (transformFn, msg) => {
+    if (!content.trim()) return;
+    const updated = transformFn(content);
+    setContent(updated);
+    saveNote(updated);
+    setShowToolsMenu(false);
+    showToast(msg);
+  };
+
+  const handleToggleChecklistItem = (lineIdx) => {
+    const lines = content.split("\n");
+    if (lineIdx < 0 || lineIdx >= lines.length) return;
+    lines[lineIdx] = lines[lineIdx].replace(/^(\s*(?:[-*•]|\d+\.)?\s*)\[([ xX✓✔])\]/, (full, prefix, state) => {
+      return `${prefix}[${state.trim() ? " " : "x"}]`;
+    });
+    const updated = lines.join("\n");
+    setContent(updated);
+    saveNote(updated);
+  };
+
+  const handleCopyRedacted = () => {
+    if (!content.trim()) return;
+    const redacted = redactSensitiveText(content);
+    navigator.clipboard.writeText(redacted);
+    setShowToolsMenu(false);
+    showToast("Copiado con datos sensibles censurados (********)");
   };
 
   // Statistics
@@ -338,12 +398,21 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   const wordsCount = content.trim() ? content.trim().split(/\s+/).length : 0;
   const charsCount = content.length;
 
-  const totalDetections = 
-    patterns.counts.cards + 
-    patterns.counts.passwords + 
-    patterns.counts.urls + 
-    patterns.counts.proxies + 
+  const totalDetections =
+    patterns.counts.cards +
+    patterns.counts.passwords +
+    patterns.counts.combos +
+    patterns.counts.urls +
+    patterns.counts.proxies +
     patterns.counts.crypto +
+    patterns.counts.txids +
+    patterns.counts.totpSecrets +
+    patterns.counts.decodedItems +
+    patterns.counts.phones +
+    patterns.counts.handles +
+    patterns.counts.timestamps +
+    patterns.counts.checklist +
+    patterns.counts.duplicates +
     (mathResult ? 1 : 0);
 
   // Font CSS family
@@ -672,73 +741,226 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
         </div>
 
-        {/* 3. SMART PATTERN & EXCEL-SUM INSPECTOR DOCK */}
+        {/* 3. NON-INTRUSIVE SMART PATTERN & EXCEL-SUM INSPECTOR DOCK (Slim 1-line bar by default) */}
         {totalDetections > 0 && (
           <section aria-label="Inspector de Datos y Cálculos" className="border-t border-white/[0.08] bg-[#0E0E11]/95 backdrop-blur-xl">
             
-            {/* Inspector Header Toggle */}
-            <div className="px-4 py-2 flex items-center justify-between gap-3 text-xs border-b border-white/[0.04]">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#FF9F0A] flex items-center gap-1.5 font-manrope">
+            {/* Inspector Slim Status Bar */}
+            <div className="px-4 py-1.5 flex items-center justify-between gap-2 text-xs border-b border-white/[0.04]">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowInspector(!showInspector)}
+                  className="text-[11px] font-extrabold uppercase tracking-wider text-[#FF9F0A] hover:opacity-80 flex items-center gap-1 font-manrope cursor-pointer mr-1"
+                  title="Haz clic para ver u ocultar detalles"
+                >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Datos y Cálculos ({totalDetections}):</span>
-                </span>
+                  <span>Inspector ({totalDetections})</span>
+                </button>
+
+                {/* Live 2FA Quick Pill (1-Click Copy directly from slim bar!) */}
+                {patterns.totpSecrets.map((item, idx) => {
+                  const otp = totpCodes[item.secret];
+                  if (!otp) return null;
+                  return (
+                    <button
+                      key={`totp-pill-${idx}`}
+                      type="button"
+                      onClick={() => handleCopySpecific(otp.rawCode, `totp-bar-${idx}`)}
+                      title="Haz clic para copiar el código 2FA de 6 dígitos"
+                      className="pf-pill bg-emerald-500/15 hover:bg-emerald-500/25 text-[#30D158] border border-emerald-500/35 text-[10px] py-0.5 px-2 font-bold font-mono-code flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <ShieldCheck className="w-3 h-3" />
+                      <span>2FA: {otp.code}</span>
+                      <span className="text-[9px] text-emerald-300/80">({otp.remainingSeconds}s)</span>
+                    </button>
+                  );
+                })}
 
                 {mathResult && (
-                  <span className="pf-pill bg-emerald-500/15 text-[#30D158] border border-emerald-500/30 text-[10px] py-0.5 px-2 font-bold font-mono-code">
+                  <button
+                    type="button"
+                    onClick={() => setShowInspector(!showInspector)}
+                    className="pf-pill bg-emerald-500/15 text-[#30D158] border border-emerald-500/30 text-[10px] py-0.5 px-2 font-bold font-mono-code cursor-pointer"
+                  >
                     ∑ {mathResult.currency}{mathResult.sum.toLocaleString("es-ES", { minimumFractionDigits: 2 })}
-                  </span>
+                  </button>
                 )}
+
+                {patterns.counts.checklist > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowInspector(!showInspector)}
+                    className="pf-pill bg-sky-500/15 text-sky-400 border border-sky-500/30 text-[10px] py-0.5 px-2 font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <CheckCheck className="w-3 h-3" />
+                    <span>{patterns.checklist.completed}/{patterns.checklist.total} ({patterns.checklist.percent}%)</span>
+                  </button>
+                )}
+
+                {patterns.counts.duplicates > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => applyTextTransform(removeDuplicateLines, "Líneas duplicadas eliminadas")}
+                    title="Haz clic para eliminar líneas repetidas automáticamente"
+                    className="pf-pill bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-[10px] py-0.5 px-2 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <span>{patterns.counts.duplicates} duplicado(s) · Limpiar</span>
+                  </button>
+                )}
+
+                {patterns.counts.combos > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowInspector(!showInspector)}
+                    className="pf-pill bg-pink-500/10 text-pink-400 border border-pink-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{patterns.counts.combos} combo(s)</span>
+                  </button>
+                )}
+
                 {patterns.counts.cards > 0 && (
-                  <span className="pf-pill bg-amber-500/10 text-[#FF9F0A] border border-amber-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowInspector(!showInspector)}
+                    className="pf-pill bg-amber-500/10 text-[#FF9F0A] border border-amber-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1 cursor-pointer"
+                  >
                     <Hash className="w-3 h-3" />
                     <span>{patterns.counts.cards} serie(s)</span>
-                  </span>
+                  </button>
                 )}
+
                 {patterns.counts.passwords > 0 && (
-                  <span className="pf-pill bg-red-500/10 text-[#FF6961] border border-red-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowInspector(!showInspector)}
+                    className="pf-pill bg-red-500/10 text-[#FF6961] border border-red-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1 cursor-pointer"
+                  >
                     <KeyRound className="w-3 h-3" />
                     <span>{patterns.counts.passwords} clave(s)</span>
-                  </span>
+                  </button>
                 )}
+
                 {patterns.counts.urls > 0 && (
-                  <span className="pf-pill bg-blue-500/10 text-[#38BDF8] border border-blue-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowInspector(!showInspector)}
+                    className="pf-pill bg-blue-500/10 text-[#38BDF8] border border-blue-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1 cursor-pointer"
+                  >
                     <Link2 className="w-3 h-3" />
                     <span>{patterns.counts.urls} enlace(s)</span>
-                  </span>
+                  </button>
                 )}
+
                 {patterns.counts.proxies > 0 && (
-                  <span className="pf-pill bg-purple-500/10 text-[#C084FC] border border-purple-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowInspector(!showInspector)}
+                    className="pf-pill bg-purple-500/10 text-[#C084FC] border border-purple-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1 cursor-pointer"
+                  >
                     <Globe className="w-3 h-3" />
                     <span>{patterns.counts.proxies} nodo(s)</span>
-                  </span>
+                  </button>
+                )}
+
+                {patterns.counts.decodedItems > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowInspector(!showInspector)}
+                    className="pf-pill bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[10px] py-0.5 px-2 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Terminal className="w-3 h-3" />
+                    <span>{patterns.counts.decodedItems} decodificado(s)</span>
+                  </button>
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
-                  onClick={handleAutoOrganize}
-                  className="pf-btn-primary flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold"
-                  title="Dar formato automático al texto, enlaces y resolver cálculos"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Auto-Formato & Sumas</span>
-                </button>
-
-                <button
+                  type="button"
                   onClick={() => setShowInspector(!showInspector)}
-                  className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.06] transition-colors"
-                  title={showInspector ? "Minimizar panel" : "Expandir panel"}
+                  className="px-2 py-1 rounded-lg text-[11px] font-semibold text-gray-400 hover:text-white hover:bg-white/[0.06] transition-colors flex items-center gap-1 cursor-pointer"
+                  title={showInspector ? "Minimizar panel" : "Ver detalles y extractores"}
                 >
-                  {showInspector ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  <span className="hidden sm:inline">{showInspector ? "Ocultar" : "Detalles"}</span>
+                  {showInspector ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
-            {/* Inspector Body Details */}
+            {/* Inspector Body Details (Only rendered when expanded by the user) */}
             {showInspector && (
-              <div className="p-3 sm:p-4 space-y-3 max-h-[240px] overflow-y-auto">
+              <div className="p-3 sm:p-4 space-y-3 max-h-[250px] overflow-y-auto">
                 
+                {/* 0. ONE-CLICK MASS EXTRACTORS BAR ("Extraer solo...") */}
+                {(patterns.combos.length > 0 || patterns.users.length > 0 || patterns.urls.length > 0 || patterns.proxies.length > 0 || patterns.keys.length > 0 || patterns.phones.length > 0) && (
+                  <div className="flex flex-wrap items-center gap-1.5 pb-2.5 border-b border-white/[0.06] text-[11px]">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 mr-1">
+                      Extraer en 1 clic:
+                    </span>
+                    {patterns.combos.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopySpecific(patterns.combos.map(c => c.clean).join("\n"), "ext-combos")}
+                        className="px-2.5 py-1 rounded-lg bg-[#18181C] hover:bg-[#232329] border border-white/[0.08] text-pink-300 font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedKey === "ext-combos" ? <Check className="w-3 h-3 text-[#30D158]" /> : <Copy className="w-3 h-3" />}
+                        <span>Solo Combos ({patterns.combos.length})</span>
+                      </button>
+                    )}
+                    {patterns.users.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopySpecific(patterns.users.map(u => u.value).join("\n"), "ext-users")}
+                        className="px-2.5 py-1 rounded-lg bg-[#18181C] hover:bg-[#232329] border border-white/[0.08] text-gray-200 font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedKey === "ext-users" ? <Check className="w-3 h-3 text-[#30D158]" /> : <Copy className="w-3 h-3" />}
+                        <span>Solo Correos/Usuarios ({patterns.users.length})</span>
+                      </button>
+                    )}
+                    {patterns.urls.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopySpecific(patterns.urls.map(u => u.clean).join("\n"), "ext-urls")}
+                        className="px-2.5 py-1 rounded-lg bg-[#18181C] hover:bg-[#232329] border border-white/[0.08] text-[#38BDF8] font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedKey === "ext-urls" ? <Check className="w-3 h-3 text-[#30D158]" /> : <Copy className="w-3 h-3" />}
+                        <span>Solo Enlaces ({patterns.urls.length})</span>
+                      </button>
+                    )}
+                    {patterns.proxies.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopySpecific(patterns.proxies.map(p => p.raw).join("\n"), "ext-proxies")}
+                        className="px-2.5 py-1 rounded-lg bg-[#18181C] hover:bg-[#232329] border border-white/[0.08] text-purple-300 font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedKey === "ext-proxies" ? <Check className="w-3 h-3 text-[#30D158]" /> : <Copy className="w-3 h-3" />}
+                        <span>Solo Nodos ({patterns.proxies.length})</span>
+                      </button>
+                    )}
+                    {patterns.keys.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopySpecific(patterns.keys.map(k => k.key).join("\n"), "ext-keys")}
+                        className="px-2.5 py-1 rounded-lg bg-[#18181C] hover:bg-[#232329] border border-white/[0.08] text-amber-300 font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedKey === "ext-keys" ? <Check className="w-3 h-3 text-[#30D158]" /> : <Copy className="w-3 h-3" />}
+                        <span>Solo Tokens ({patterns.keys.length})</span>
+                      </button>
+                    )}
+                    {patterns.phones.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopySpecific(patterns.phones.map(p => p.clean).join("\n"), "ext-phones")}
+                        className="px-2.5 py-1 rounded-lg bg-[#18181C] hover:bg-[#232329] border border-white/[0.08] text-emerald-300 font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedKey === "ext-phones" ? <Check className="w-3 h-3 text-[#30D158]" /> : <Copy className="w-3 h-3" />}
+                        <span>Solo Teléfonos ({patterns.phones.length})</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* Excel-like Math Sum Box */}
                 {mathResult && (
                   <div className="p-3 rounded-xl bg-[#141416] border border-emerald-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-sm">
@@ -779,6 +1001,114 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                         {copiedKey === "sum-total" ? <Check className="w-3.5 h-3.5 text-[#30D158]" /> : <Copy className="w-3.5 h-3.5" />}
                         <span>Copiar suma</span>
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Live 2FA TOTP Generator Cards */}
+                {patterns.totpSecrets.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block">
+                      Autenticador 2FA (TOTP en Tiempo Real)
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {patterns.totpSecrets.map((item, idx) => {
+                        const otp = totpCodes[item.secret];
+                        return (
+                          <div
+                            key={idx}
+                            className="p-3 rounded-xl bg-[#141416] border border-emerald-500/25 flex items-center justify-between gap-2 text-xs"
+                          >
+                            <div>
+                              <span className="text-[10px] text-gray-400 block truncate max-w-[150px]">{item.label}</span>
+                              <span className="text-base font-extrabold text-[#30D158] font-mono-code tracking-wider">
+                                {otp ? otp.code : "--- ---"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {otp && (
+                                <span className="text-[11px] font-mono-code text-gray-400">
+                                  {otp.remainingSeconds}s
+                                </span>
+                              )}
+                              {otp && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopySpecific(otp.rawCode, `totp-card-${idx}`)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                                >
+                                  {copiedKey === `totp-card-${idx}` ? <Check className="w-3.5 h-3.5 text-[#30D158]" /> : <Copy className="w-3.5 h-3.5" />}
+                                  <span>Copiar</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Interactive Checklist Progress */}
+                {patterns.checklist.total > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">
+                        Tareas ({patterns.checklist.completed}/{patterns.checklist.total} · {patterns.checklist.percent}%)
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {patterns.checklist.items.map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleToggleChecklistItem(item.lineIndex)}
+                          className="px-3 py-1.5 rounded-xl bg-[#141416] hover:bg-[#1B1B1E] border border-white/[0.06] flex items-center gap-2 text-left text-xs transition-colors cursor-pointer"
+                        >
+                          <span className={`w-4 h-4 rounded flex items-center justify-center border text-[10px] shrink-0 ${
+                            item.done ? "bg-[#30D158]/20 border-[#30D158] text-[#30D158]" : "border-gray-600 text-transparent"
+                          }`}>
+                            ✓
+                          </span>
+                          <span className={`truncate ${item.done ? "line-through text-gray-500" : "text-gray-200"}`}>
+                            {item.text}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Decoded JWT & Base64 Payloads */}
+                {patterns.decodedItems.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block">
+                      Decodificador Automático (JWT / Base64)
+                    </span>
+                    <div className="grid grid-cols-1 gap-2">
+                      {patterns.decodedItems.map((dec, idx) => (
+                        <div
+                          key={idx}
+                          className="p-2.5 rounded-xl bg-[#141416] border border-indigo-500/25 flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="overflow-hidden flex-1">
+                            <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold mr-2">
+                              {dec.type}
+                            </span>
+                            <span className="font-mono-code text-[11px] text-gray-200 break-all">
+                              {dec.decoded}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleCopySpecific(dec.decoded, `dec-${idx}`)}
+                            className="px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] text-gray-200 text-[10px] font-bold shrink-0 flex items-center gap-1 cursor-pointer"
+                          >
+                            {copiedKey === `dec-${idx}` ? <Check className="w-3 h-3 text-[#30D158]" /> : <Copy className="w-3 h-3" />}
+                            <span>Copiar</span>
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -955,9 +1285,9 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                   </div>
                 )}
 
-                {/* Proxies & Crypto Quick Row */}
-                {(patterns.proxies.length > 0 || patterns.crypto.length > 0) && (
-                  <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-white/[0.04]">
+                {/* Nodes, Crypto, TXIDs, Handles & Timestamps Quick Row */}
+                {(patterns.proxies.length > 0 || patterns.crypto.length > 0 || patterns.txids.length > 0 || patterns.handles.length > 0 || patterns.timestamps.length > 0) && (
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1 border-t border-white/[0.04]">
                     {patterns.proxies.length > 0 && (
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-purple-400 font-bold flex items-center gap-1">
@@ -971,13 +1301,22 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                           }}
                           className="px-2 py-0.5 rounded bg-[#1B1B1E] hover:bg-[#25252A] text-gray-300 text-[10px] font-bold"
                         >
-                          {copiedKey === "proxies-all" ? "¡Copiados!" : "Copiar todos"}
+                          {copiedKey === "proxies-all" ? "¡Copiados!" : "Copiar IP:Port"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            const uriText = patterns.proxies.map(p => p.uri).join("\n");
+                            handleCopySpecific(uriText, "proxies-uri");
+                          }}
+                          className="px-2 py-0.5 rounded bg-[#1B1B1E] hover:bg-[#25252A] text-purple-300 text-[10px] font-bold"
+                        >
+                          {copiedKey === "proxies-uri" ? "¡Copiados!" : "Copiar URI"}
                         </button>
                       </div>
                     )}
 
                     {patterns.crypto.map((c, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 text-xs bg-[#141416] px-2 py-1 rounded-lg border border-white/[0.06]">
+                      <div key={`c-${idx}`} className="flex items-center gap-1.5 text-xs bg-[#141416] px-2 py-1 rounded-lg border border-white/[0.06]">
                         <span className="text-yellow-400 font-bold text-[10px]">{c.badge}:</span>
                         <span className="font-mono-code text-[10px] text-gray-300 max-w-[120px] truncate">{c.address}</span>
                         <button
@@ -986,6 +1325,42 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                         >
                           {copiedKey === `crypto-${idx}` ? <Check className="w-3 h-3 text-[#30D158]" /> : <Copy className="w-3 h-3" />}
                         </button>
+                      </div>
+                    ))}
+
+                    {patterns.txids.map((tx, idx) => (
+                      <div key={`tx-${idx}`} className="flex items-center gap-1.5 text-xs bg-[#141416] px-2 py-1 rounded-lg border border-emerald-500/25">
+                        <span className="text-emerald-400 font-bold text-[10px]">TXID:</span>
+                        <span className="font-mono-code text-[10px] text-gray-300 max-w-[100px] truncate">{tx.hash}</span>
+                        <a
+                          href={tx.explorerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Ver transacción en el explorador"
+                          className="text-emerald-400 hover:text-white p-0.5"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    ))}
+
+                    {patterns.handles.map((h, idx) => (
+                      <a
+                        key={`h-${idx}`}
+                        href={h.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[11px] bg-[#141416] hover:bg-[#1B1B1E] px-2 py-1 rounded-lg border border-sky-500/25 text-sky-400 font-mono-code"
+                      >
+                        <span>{h.handle}</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    ))}
+
+                    {patterns.timestamps.map((ts, idx) => (
+                      <div key={`ts-${idx}`} className="flex items-center gap-1.5 text-[10px] bg-[#141416] px-2 py-1 rounded-lg border border-white/[0.06] text-gray-300 font-mono-code">
+                        <span className="text-gray-500">{ts.raw} ➔</span>
+                        <span>{ts.formatted}</span>
                       </div>
                     ))}
                   </div>
@@ -998,9 +1373,9 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
         )}
 
         {/* 4. BOTTOM FOOTER TOOLBAR */}
-        <div className="px-4 py-2.5 border-t border-white/[0.08] bg-[#141416]/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="px-4 py-2.5 border-t border-white/[0.08] bg-[#141416]/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 text-xs relative">
           
-          {/* Left: Editable Link & Share Link pill & Math Pill & Auto-Organize */}
+          {/* Left: Editable Link & Share Link pill & Math Pill & Auto-Organize & Non-Intrusive Tools Menu */}
           <div className="flex items-center flex-wrap gap-2">
             <div 
               onClick={() => {
@@ -1035,12 +1410,88 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             {/* Auto-Organize button */}
             <button
               onClick={handleAutoOrganize}
-              title="Organizar texto, dar formato limpio y resolver cálculos"
+              title="Organizar texto, dar formato limpio y resolver cálculos (variables y %)"
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF9F0A] text-[11px] font-semibold transition-colors font-manrope"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A]" />
               <span>Organizar</span>
             </button>
+
+            {/* Non-Intrusive Regex Tools Popover Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowToolsMenu(!showToolsMenu)}
+                title="Herramientas rápidas de limpieza, listas y censura"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white text-[11px] font-semibold transition-colors font-manrope cursor-pointer"
+              >
+                <Terminal className="w-3.5 h-3.5 text-gray-400" />
+                <span>Herramientas</span>
+                <ChevronUp className="w-3 h-3 text-gray-500" />
+              </button>
+
+              {showToolsMenu && (
+                <div className="absolute bottom-full left-0 mb-2 w-60 rounded-2xl bg-[#141417] border border-white/[0.12] shadow-2xl p-1.5 z-50 space-y-0.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => applyTextTransform(removeDuplicateLines, "Líneas duplicadas eliminadas")}
+                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Quitar líneas duplicadas</span>
+                    {patterns.counts.duplicates > 0 && (
+                      <span className="px-1.5 py-0.2 rounded bg-[#FF9F0A]/20 text-[#FF9F0A] font-mono-code text-[10px]">
+                        {patterns.counts.duplicates}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyTextTransform(normalizeCombosInText, "Formato user:pass normalizado")}
+                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Normalizar user:pass</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyTextTransform(toggleNodeFormat, "Formato de nodos convertido")}
+                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Convertir Nodos (IP:Port ⇄ URI)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyTextTransform(alignColumnsInText, "Columnas alineadas en tabla")}
+                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Alinear columnas (| o ;)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyTextTransform((t) => sortLinesInText(t, false), "Líneas ordenadas A ➔ Z")}
+                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Ordenar líneas (A ➔ Z)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyTextTransform(toggleNumberedLines, "Numeración de lista actualizada")}
+                    className="w-full px-3 py-1.5 rounded-xl hover:bg-white/[0.06] text-left text-gray-200 flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Numerar / Quitar 1. 2. 3.</span>
+                  </button>
+                  <div className="border-t border-white/[0.08] my-1 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleCopyRedacted}
+                      className="w-full px-3 py-1.5 rounded-xl hover:bg-[#FF9F0A]/15 text-left text-[#FF9F0A] font-semibold flex items-center justify-between cursor-pointer"
+                    >
+                      <span>Copiar nota censurada (***)</span>
+                      <Shield className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: Word counters, font zoom, and line numbers toggle */}
