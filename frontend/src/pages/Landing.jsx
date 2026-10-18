@@ -266,7 +266,7 @@ export default function Landing() {
               </div>
               <h3 className="text-lg font-bold text-white mb-2 font-manrope">Cero Cuentas ni Formularios</h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Tu tiempo vale oro. Sin contraseñas obligatorias, sin correos de verificación y sin datos de tarjeta de crédito. Abre y escribe.
+                Tu tiempo vale oro. Sin contraseñas obligatorias, sin correos de verificación y sin suscripciones ni registros. Abre y escribe.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-white/[0.06] text-[11px] font-mono-code text-[#FF9F0A] flex items-center gap-1.5">

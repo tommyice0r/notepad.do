@@ -6,7 +6,7 @@ import {
   Download, ZoomIn, ZoomOut, Hash, Send, 
   KeyRound, AlertTriangle, AlertCircle, X, 
   Sparkles, FileEdit, Activity, ExternalLink,
-  CreditCard, Eye, EyeOff, ShieldCheck, CheckCheck,
+  Eye, EyeOff, ShieldCheck, CheckCheck,
   ChevronDown, ChevronUp, Globe, Terminal, Shield,
   Palette, Calculator, Equal, Link2
 } from "lucide-react";
@@ -664,13 +664,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
               className={`w-full flex-1 min-h-[500px] lg:min-h-[580px] p-6 bg-transparent leading-[1.7] resize-none outline-none z-20 placeholder-gray-600 overflow-auto selection:bg-[#FF9F0A]/30 selection:text-white ${
                 privacyMode ? "blur-[3.5px] hover:blur-none transition-all duration-200 text-[#EDEDED]" : "text-[#EDEDED]"
               }`}
-              placeholder="Empieza a escribir aquí... Todo se guarda automáticamente en la nube al instante.
-
-Funciones inteligentes integradas:
-- Sumas tipo Excel: Escribe una lista de importes ($45, $120.50, $30) y presiona 'Insertar Total'
-- Calculadora en línea: Escribe '150 * 4 + 20 =' y presiona 'Organizar' para resolver el resultado
-- Limpieza de enlaces y formato JSON: Pega URLs con parámetros o bloques JSON para darles formato limpio
-- Protección con clave: Haz clic en el icono del candado para proteger tu documento"
+              placeholder=""
               spellCheck="false"
             />
 
@@ -680,7 +674,7 @@ Funciones inteligentes integradas:
 
         {/* 3. SMART PATTERN & EXCEL-SUM INSPECTOR DOCK */}
         {totalDetections > 0 && (
-          <section aria-label="Detector de Datos, Cálculos y Credenciales" className="border-t border-white/[0.08] bg-[#0E0E11]/95 backdrop-blur-xl">
+          <section aria-label="Inspector de Datos y Cálculos" className="border-t border-white/[0.08] bg-[#0E0E11]/95 backdrop-blur-xl">
             
             {/* Inspector Header Toggle */}
             <div className="px-4 py-2 flex items-center justify-between gap-3 text-xs border-b border-white/[0.04]">
@@ -697,8 +691,8 @@ Funciones inteligentes integradas:
                 )}
                 {patterns.counts.cards > 0 && (
                   <span className="pf-pill bg-amber-500/10 text-[#FF9F0A] border border-amber-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
-                    <CreditCard className="w-3 h-3" />
-                    <span>{patterns.counts.cards} tarjeta(s)</span>
+                    <Hash className="w-3 h-3" />
+                    <span>{patterns.counts.cards} serie(s)</span>
                   </span>
                 )}
                 {patterns.counts.passwords > 0 && (
@@ -716,7 +710,7 @@ Funciones inteligentes integradas:
                 {patterns.counts.proxies > 0 && (
                   <span className="pf-pill bg-purple-500/10 text-[#C084FC] border border-purple-500/25 text-[10px] py-0.5 px-2 flex items-center gap-1">
                     <Globe className="w-3 h-3" />
-                    <span>{patterns.counts.proxies} proxy(s)</span>
+                    <span>{patterns.counts.proxies} nodo(s)</span>
                   </span>
                 )}
               </div>
@@ -725,7 +719,7 @@ Funciones inteligentes integradas:
                 <button
                   onClick={handleAutoOrganize}
                   className="pf-btn-primary flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold"
-                  title="Dar formato automático a tarjetas, contraseñas, URLs y resolver cálculos"
+                  title="Dar formato automático al texto, enlaces y resolver cálculos"
                 >
                   <Sparkles className="w-3 h-3" />
                   <span>Auto-Formato & Sumas</span>
@@ -789,11 +783,11 @@ Funciones inteligentes integradas:
                   </div>
                 )}
 
-                {/* Detected Cards Grid */}
+                {/* Detected Number Series Grid (Internalized) */}
                 {patterns.cards.length > 0 && (
                   <div className="space-y-2">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500 block">
-                      Tarjetas de Pago
+                      Series Numéricas
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                       {patterns.cards.map((card, idx) => {
@@ -811,7 +805,7 @@ Funciones inteligentes integradas:
                               {card.isValid ? (
                                 <span className="text-[10px] text-[#30D158] font-bold flex items-center gap-1">
                                   <CheckCheck className="w-3 h-3" />
-                                  <span>Luhn OK</span>
+                                  <span>Verificado</span>
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-yellow-400 font-semibold">
@@ -820,7 +814,7 @@ Funciones inteligentes integradas:
                               )}
                             </div>
 
-                            {/* Card Number */}
+                            {/* Sequence Number */}
                             <div className="flex items-center justify-between font-mono-code text-sm font-bold text-white tracking-wider my-0.5">
                               <span>{isRevealed ? card.formatted : card.masked}</span>
                               <button
@@ -832,11 +826,11 @@ Funciones inteligentes integradas:
                               </button>
                             </div>
 
-                            {/* Exp & CVV */}
+                            {/* Metadata */}
                             <div className="flex items-center justify-between text-[11px] text-gray-400 border-t border-white/[0.06] pt-1.5">
-                              <span>Vence: <strong className="text-gray-200">{card.exp || "—"}</strong></span>
+                              <span>Fecha: <strong className="text-gray-200">{card.exp || "—"}</strong></span>
                               <span>
-                                CVV: <strong className="text-gray-200 font-mono-code">{isCvvRevealed ? (card.cvv || "—") : "•••"}</strong>
+                                Cód: <strong className="text-gray-200 font-mono-code">{isCvvRevealed ? (card.cvv || "—") : "•••"}</strong>
                                 {card.cvv && (
                                   <button
                                     onClick={() => setRevealedCvv({ ...revealedCvv, [idx]: !isCvvRevealed })}
@@ -848,7 +842,7 @@ Funciones inteligentes integradas:
                               </span>
                             </div>
 
-                            {/* Card Copy Actions */}
+                            {/* Copy Actions */}
                             <div className="flex items-center gap-1.5 pt-1">
                               <button
                                 onClick={() => handleCopySpecific(card.digits, `card-num-${idx}`)}
@@ -859,7 +853,7 @@ Funciones inteligentes integradas:
                               </button>
                               <button
                                 onClick={() => {
-                                  const fullCardText = `Tarjeta: ${card.formatted} | Vence: ${card.exp || "N/A"} | CVV: ${card.cvv || "N/A"} | ${card.brand}`;
+                                  const fullCardText = `${card.formatted} | ${card.exp || "N/A"} | ${card.cvv || "N/A"} | ${card.brand}`;
                                   handleCopySpecific(fullCardText, `card-all-${idx}`);
                                 }}
                                 className="flex-1 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] text-[#FF9F0A] hover:text-white text-[10px] font-bold transition-colors flex items-center justify-center gap-1"
@@ -968,7 +962,7 @@ Funciones inteligentes integradas:
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-purple-400 font-bold flex items-center gap-1">
                           <Globe className="w-3.5 h-3.5" />
-                          <span>{patterns.proxies.length} proxy(s)</span>
+                          <span>{patterns.proxies.length} nodo(s)</span>
                         </span>
                         <button
                           onClick={() => {
@@ -1041,7 +1035,7 @@ Funciones inteligentes integradas:
             {/* Auto-Organize button */}
             <button
               onClick={handleAutoOrganize}
-              title="Organizar credenciales, tarjetas, URLs, proxies, JSON y resolver cálculos"
+              title="Organizar texto, dar formato limpio y resolver cálculos"
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF9F0A] text-[11px] font-semibold transition-colors font-manrope"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A]" />

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import Editor from "./components/Editor";
 import Admin from "./components/Admin";
@@ -26,14 +26,6 @@ function normalizeAdSenseClientId(rawClientId) {
   if (!trimmed || trimmed.includes("0000000000000000")) return "";
   const normalized = trimmed.startsWith("pub-") ? `ca-${trimmed}` : trimmed;
   return /^ca-pub-\d{10,20}$/.test(normalized) ? normalized : "";
-}
-
-// Validate individual AdSense ad-unit slot ID
-function normalizeAdSenseSlotId(rawSlotId) {
-  if (!rawSlotId || typeof rawSlotId !== "string") return "";
-  const trimmed = rawSlotId.trim();
-  if (!trimmed || /^0+$/.test(trimmed)) return "";
-  return /^\d{6,20}$/.test(trimmed) ? trimmed : "";
 }
 
 // Generator for short note URLs
@@ -159,53 +151,6 @@ function RouteSeoManager({ isNoteLocked = false }) {
   return null;
 }
 
-// Official Google AdSense Banner Component (only renders when valid client & slot IDs exist)
-export function AdBanner({ position = "top", config, hidden = false }) {
-  const insRef = useRef(null);
-  const clientId = normalizeAdSenseClientId(config?.adsense_client_id);
-  const rawSlot =
-    position === "top" ? config?.adsense_slot_top : config?.adsense_slot_bottom;
-  const slotId = normalizeAdSenseSlotId(rawSlot);
-  const isEnabled = Boolean(config?.adsense_enabled && clientId && slotId && !hidden);
-
-  useEffect(() => {
-    if (!isEnabled || !insRef.current) return;
-    if (insRef.current.getAttribute("data-adsbygoogle-status")) return;
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch {
-      // Ignore duplicate push or script blocker errors
-    }
-  }, [isEnabled, clientId, slotId]);
-
-  // Never render fake placeholders or empty ad frames when AdSense is unconfigured or hidden
-  if (!isEnabled) {
-    return null;
-  }
-
-  return (
-    <aside
-      aria-label={`Publicidad ${position === "top" ? "superior" : "inferior"}`}
-      className="w-full max-w-[1300px] mx-auto my-2 flex flex-col items-center justify-center select-none"
-    >
-      <span className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">
-        Publicidad
-      </span>
-      <div className="w-full max-w-[728px] min-h-[90px] bg-[#111113]/60 border border-white/[0.06] rounded-xl flex items-center justify-center overflow-hidden px-2 py-1">
-        <ins
-          ref={insRef}
-          className="adsbygoogle"
-          style={{ display: "block", width: "100%", minHeight: "90px" }}
-          data-ad-client={clientId}
-          data-ad-slot={slotId}
-          data-ad-format="auto"
-          data-full-width-responsive="true"
-        />
-      </div>
-    </aside>
-  );
-}
-
 // Rich Editorial Documentation & Quick Guide rendered below the editor for users and AdSense crawlers
 function EditorEditorialGuide() {
   return (
@@ -303,10 +248,8 @@ function EditorEditorialGuide() {
   );
 }
 
-// Editor Note Page with Optional Top & Bottom AdSense Banners + Editorial Documentation
+// Editor Note Page (Clean layout without manual banner slots until AdSense approval)
 function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
-  const hideAds = Boolean(editorStatus?.loading || editorStatus?.isLocked);
-
   return (
     <div className="min-h-screen bg-[#060607] text-[#EDEDED] font-manrope flex flex-col justify-between p-2 sm:p-4 md:p-6">
       {/* Optional System Announcement Banner configured in Admin */}
@@ -316,10 +259,7 @@ function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
         </div>
       )}
 
-      {/* 1. TOP ADSENSE BANNER (Only renders when AdSense Client & Slot IDs are configured and note is not locked) */}
-      <AdBanner position="top" config={appConfig} hidden={hideAds} />
-
-      {/* 2. CENTRAL NOTEPAD CONTAINER */}
+      {/* CENTRAL NOTEPAD CONTAINER */}
       <main className="w-full max-w-[1300px] mx-auto flex-1 flex flex-col my-2">
         <Editor
           unlockPrice={appConfig?.unlock_price_usd}
@@ -327,10 +267,7 @@ function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
         />
       </main>
 
-      {/* 3. BOTTOM ADSENSE BANNER */}
-      <AdBanner position="bottom" config={appConfig} hidden={hideAds} />
-
-      {/* 4. RICH EDITORIAL DOCUMENTATION (Ensures high-value publisher content for users & AdSense reviewers) */}
+      {/* RICH EDITORIAL DOCUMENTATION (Ensures high-value publisher content for users & AdSense reviewers) */}
       {!editorStatus?.isLocked && <EditorEditorialGuide />}
 
       {/* Minimal Compliance Footer */}

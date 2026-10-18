@@ -29,7 +29,7 @@ export default function Terms() {
         <ul className="list-disc pl-5 space-y-1.5 text-gray-300">
           <li>Constituya o facilite actividades ilegales, fraude, estafas o esquemas piramidales.</li>
           <li>Contenga enlaces a programas maliciosos (malware, virus, troyanos o ransomware).</li>
-          <li>Contenga información privada no autorizada de terceros (doxxing, números de tarjetas bancarias, documentos de identidad sin consentimiento).</li>
+          <li>Contenga información privada no autorizada de terceros (doxxing, información financiera confidencial o documentos de identidad sin consentimiento).</li>
           <li>Promueva el odio, la discriminación, la violencia o la pornografía infantil.</li>
           <li>Infrinja derechos de autor, marcas comerciales o propiedad intelectual de terceros.</li>
         </ul>
