@@ -1,73 +1,176 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   X, Image as ImageIcon, Sliders, Type, 
-  Palette, Upload, RefreshCw, Check, Sparkles, AlertCircle 
+  Palette, Upload, RefreshCw, Check, Sparkles, 
+  AlertCircle, Film, Link2, Trash2, CheckCircle2 
 } from "lucide-react";
 import { 
   THEME_PRESETS, ACCENT_COLORS, FONT_OPTIONS, 
-  DEFAULT_THEME, getActiveBackgroundUrl 
+  DEFAULT_THEME, getActiveBackgroundUrl,
+  saveUploadedWallpaperBlob, getUploadedWallpaperBlob, deleteUploadedWallpaperBlob
 } from "../utils/themeManager";
+
+const QUICK_GIF_LINKS = [
+  { name: "Cyberpunk Rain", url: "https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif" },
+  { name: "Lo-Fi Study", url: "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif" },
+  { name: "Matrix Code", url: "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif" },
+  { name: "Synthwave 80s", url: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif" },
+  { name: "Pixel Sunset", url: "https://media.giphy.com/media/l0HlTy9x8FZo0XO1i/giphy.gif" },
+  { name: "Espacio Warp", url: "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif" },
+];
 
 export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
   const [activeTab, setActiveTab] = useState("wallpapers"); // 'wallpapers' | 'glass' | 'fonts'
+  const [wallpaperFilter, setWallpaperFilter] = useState("all"); // 'all' | 'gif' | 'photo'
   const [urlInput, setUrlInput] = useState(theme.customImageUrl || "");
   const [uploadError, setUploadError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState("");
+
+  // Load active blob preview if current background is user upload
+  useEffect(() => {
+    let localUrl = null;
+    let isMounted = true;
+
+    async function loadUploadPreview() {
+      if (theme.backgroundType === "upload") {
+        if (theme.uploadedImage) {
+          if (isMounted) setUploadedPreviewUrl(theme.uploadedImage);
+          return;
+        }
+        const blob = await getUploadedWallpaperBlob();
+        if (blob && isMounted) {
+          localUrl = URL.createObjectURL(blob);
+          setUploadedPreviewUrl(localUrl);
+        }
+      } else {
+        if (isMounted) setUploadedPreviewUrl("");
+      }
+    }
+
+    loadUploadPreview();
+
+    return () => {
+      isMounted = false;
+      if (localUrl) {
+        URL.revokeObjectURL(localUrl);
+      }
+    };
+  }, [theme.backgroundType, theme.hasUploadedBlob, theme.uploadedImage]);
 
   const handleSelectPreset = (presetId) => {
+    const preset = THEME_PRESETS.find(p => p.id === presetId);
     onUpdateTheme({
       ...theme,
       backgroundType: "preset",
-      presetId
+      presetId,
+      isGif: preset ? preset.isGif : false,
     });
   };
 
   const handleApplyUrl = () => {
-    if (!urlInput.trim()) return;
+    const trimmed = urlInput.trim();
+    if (!trimmed) return;
+    const isGifUrl = trimmed.toLowerCase().includes(".gif") || trimmed.includes("giphy.com");
     onUpdateTheme({
       ...theme,
       backgroundType: "url",
-      customImageUrl: urlInput.trim()
+      customImageUrl: trimmed,
+      isGif: isGifUrl,
     });
   };
 
-  const handleFileUpload = (e) => {
+  const handleQuickUrl = (quickUrl) => {
+    setUrlInput(quickUrl);
+    const isGifUrl = quickUrl.toLowerCase().includes(".gif") || quickUrl.includes("giphy.com");
+    onUpdateTheme({
+      ...theme,
+      backgroundType: "url",
+      customImageUrl: quickUrl,
+      isGif: isGifUrl,
+    });
+  };
+
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setUploadError("Por favor selecciona un archivo de imagen válido (PNG, JPG, WEBP).");
+    const isGif = file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif");
+    const isImage = file.type.startsWith("image/");
+
+    if (!isImage && !isGif) {
+      setUploadError("Por favor selecciona un archivo de imagen o GIF válido (.gif, .png, .jpg, .webp).");
       return;
     }
 
-    // Limit to 2.5MB so localStorage doesn't hit quota
-    if (file.size > 2.5 * 1024 * 1024) {
-      setUploadError("La imagen debe ser menor a 2.5MB para guardarse en localStorage.");
+    // Support up to 15MB via IndexedDB
+    if (file.size > 15 * 1024 * 1024) {
+      setUploadError("El archivo no debe exceder los 15MB.");
       return;
     }
 
     setUploadError("");
-    const reader = new FileReader();
-    reader.onload = () => {
+    setIsUploading(true);
+
+    try {
+      const saved = await saveUploadedWallpaperBlob(file);
+      if (!saved) {
+        throw new Error("No se pudo escribir en el almacenamiento del navegador");
+      }
+
+      const sizeStr = (file.size / (1024 * 1024)).toFixed(1) + " MB";
+
       onUpdateTheme({
         ...theme,
         backgroundType: "upload",
-        uploadedImage: reader.result
+        uploadedImage: "", // keep localStorage clean
+        hasUploadedBlob: true,
+        uploadedFileName: file.name,
+        uploadedFileSize: sizeStr,
+        isGif: isGif,
+        presetId: null,
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Error al guardar fondo:", err);
+      setUploadError("Error guardando el archivo en el navegador: " + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveUploaded = async () => {
+    await deleteUploadedWallpaperBlob();
+    setUploadedPreviewUrl("");
+    onUpdateTheme({
+      ...theme,
+      backgroundType: "preset",
+      presetId: "default",
+      hasUploadedBlob: false,
+      uploadedImage: "",
+      uploadedFileName: "",
+      uploadedFileSize: "",
+      isGif: false,
+    });
   };
 
   const handleReset = () => {
+    deleteUploadedWallpaperBlob();
     onUpdateTheme(DEFAULT_THEME);
     setUrlInput("");
     setUploadError("");
+    setUploadedPreviewUrl("");
   };
 
-  const currentBgUrl = getActiveBackgroundUrl(theme);
+  const filteredPresets = THEME_PRESETS.filter(p => {
+    if (wallpaperFilter === "all") return true;
+    if (wallpaperFilter === "gif") return p.isGif;
+    if (wallpaperFilter === "photo") return !p.isGif && p.url !== null;
+    return true;
+  });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
-      <div className="w-full max-w-2xl pf-panel shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-white/[0.12] bg-[#141416]/95 backdrop-blur-2xl">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+      <div className="w-full max-w-2xl pf-panel shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-white/[0.12] bg-[#141416]/95 backdrop-blur-2xl">
         
         {/* Header */}
         <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between bg-[#18181B]/80">
@@ -77,10 +180,10 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
             </div>
             <div>
               <h2 className="text-base font-extrabold text-white font-manrope">
-                Personalización y Fondos
+                Personalización, Fondos & GIFs
               </h2>
               <p className="text-[11px] text-gray-400">
-                Guardado instantáneo en tu navegador (localStorage) sin sobrecargar el servidor.
+                Soporte de GIFs animados fluidos, fotos HD y almacenamiento local en tu navegador.
               </p>
             </div>
           </div>
@@ -103,8 +206,8 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                 : "text-gray-400 hover:text-white hover:bg-white/[0.04]"
             }`}
           >
-            <ImageIcon className="w-3.5 h-3.5" />
-            <span>Fondos de Pantalla</span>
+            <Film className="w-3.5 h-3.5" />
+            <span>Fondos & GIFs</span>
           </button>
 
           <button
@@ -116,7 +219,7 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>Vidrio y Desenfoque</span>
+            <span>Vidrio & Desenfoque</span>
           </button>
 
           <button
@@ -128,24 +231,57 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
             }`}
           >
             <Type className="w-3.5 h-3.5" />
-            <span>Tipografía y Color</span>
+            <span>Tipografía & Color</span>
           </button>
         </div>
 
         {/* Body Content */}
         <div className="p-5 overflow-y-auto flex-1 space-y-5 text-sm text-gray-300">
           
-          {/* TAB 1: WALLPAPERS */}
+          {/* TAB 1: WALLPAPERS & GIFS */}
           {activeTab === "wallpapers" && (
             <div className="space-y-5">
               
-              {/* Preset Wallpapers */}
+              {/* Presets Header with Sub-filters */}
               <div>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block mb-2.5 font-manrope">
-                  Fondos Seleccionados (Colección HD)
-                </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 font-manrope">
+                    Colección de Fondos & GIFs
+                  </span>
+
+                  <div className="flex items-center gap-1 bg-[#0E0E11] p-1 rounded-lg border border-white/[0.06] text-[11px] font-manrope">
+                    <button
+                      onClick={() => setWallpaperFilter("all")}
+                      className={`px-2.5 py-1 rounded-md transition-colors ${
+                        wallpaperFilter === "all" ? "bg-white/[0.12] text-white font-bold" : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    <button
+                      onClick={() => setWallpaperFilter("gif")}
+                      className={`px-2.5 py-1 rounded-md flex items-center gap-1 transition-colors ${
+                        wallpaperFilter === "gif" ? "bg-[#FF9F0A]/20 text-[#FF9F0A] font-bold border border-[#FF9F0A]/30" : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      <Film className="w-3 h-3" />
+                      <span>GIFs Animados</span>
+                    </button>
+                    <button
+                      onClick={() => setWallpaperFilter("photo")}
+                      className={`px-2.5 py-1 rounded-md flex items-center gap-1 transition-colors ${
+                        wallpaperFilter === "photo" ? "bg-white/[0.12] text-white font-bold" : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      <ImageIcon className="w-3 h-3" />
+                      <span>Fotos HD</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preset Cards Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                  {THEME_PRESETS.map((p) => {
+                  {filteredPresets.map((p) => {
                     const isSelected = theme.backgroundType === "preset" && theme.presetId === p.id;
                     return (
                       <button
@@ -163,9 +299,11 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                           backgroundPosition: "center",
                         }}
                       >
-                        <div className="absolute inset-0 bg-black/50 group-hover:bg-black/35 transition-colors"></div>
+                        <div className="absolute inset-0 bg-black/55 group-hover:bg-black/35 transition-colors"></div>
+                        
+                        {/* Top Bar inside card */}
                         <div className="relative z-10 flex items-center justify-between w-full">
-                          <span className="text-[11px] font-bold text-white font-manrope drop-shadow-md">
+                          <span className="text-[11px] font-bold text-white font-manrope drop-shadow-md truncate pr-1">
                             {p.name}
                           </span>
                           {isSelected && (
@@ -174,62 +312,143 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                             </span>
                           )}
                         </div>
-                        <span className="relative z-10 text-[9px] text-gray-300 drop-shadow line-clamp-1">
-                          {p.desc}
-                        </span>
+
+                        {/* Bottom Tag */}
+                        <div className="relative z-10 flex items-center justify-between gap-1 w-full">
+                          <span className="text-[9px] text-gray-300 drop-shadow line-clamp-1">
+                            {p.desc}
+                          </span>
+                          {p.isGif && (
+                            <span className="px-1 py-0.2 rounded bg-[#FF9F0A]/20 border border-[#FF9F0A]/40 text-[#FF9F0A] text-[8px] font-extrabold uppercase shrink-0">
+                              GIF
+                            </span>
+                          )}
+                          {!p.isGif && p.url && (
+                            <span className="px-1 py-0.2 rounded bg-white/10 border border-white/20 text-gray-300 text-[8px] font-bold uppercase shrink-0">
+                              HD
+                            </span>
+                          )}
+                        </div>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Custom Image URL */}
-              <div className="p-4 rounded-xl bg-[#0E0E11] border border-white/[0.08] space-y-2">
-                <span className="text-xs font-bold text-white block font-manrope">
-                  Usar imagen de internet (URL directa)
-                </span>
-                <p className="text-[11px] text-gray-400 leading-relaxed">
-                  Pega el enlace de cualquier fondo de Unsplash, Pinterest o Imgur:
-                </p>
+              {/* Custom Direct URL Section with Quick GIF Chips */}
+              <div className="p-4 rounded-xl bg-[#0E0E11] border border-white/[0.08] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5 font-manrope">
+                    <Link2 className="w-3.5 h-3.5 text-[#FF9F0A]" />
+                    <span>Pegar URL directa (GIF animado o imagen)</span>
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-mono-code">
+                    Giphy / Tenor / Imgur / Direct .gif
+                  </span>
+                </div>
+
                 <div className="flex gap-2">
                   <input
                     type="url"
-                    placeholder="https://images.unsplash.com/..."
+                    placeholder="https://media.giphy.com/.../giphy.gif"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
                     className="flex-1 bg-[#141416] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 font-mono-code outline-none focus:border-[#FF9F0A]"
                   />
                   <button
                     onClick={handleApplyUrl}
-                    className="pf-btn-primary px-3.5 py-2 text-xs font-bold"
+                    className="pf-btn-primary px-4 py-2 text-xs font-bold font-manrope shrink-0"
                   >
                     Aplicar
                   </button>
                 </div>
+
+                {/* Quick GIF preset pills */}
+                <div>
+                  <span className="text-[10px] text-gray-400 block mb-1.5 font-manrope font-semibold">
+                    Atajos rápidos de GIFs animados:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {QUICK_GIF_LINKS.map((q) => (
+                      <button
+                        key={q.name}
+                        onClick={() => handleQuickUrl(q.url)}
+                        className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-[#FF9F0A]/15 border border-white/[0.08] hover:border-[#FF9F0A]/30 text-[10px] text-gray-300 hover:text-[#FF9F0A] font-mono-code transition-colors flex items-center gap-1"
+                      >
+                        <Film className="w-2.5 h-2.5 opacity-70" />
+                        <span>{q.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Upload Local Image */}
-              <div className="p-4 rounded-xl bg-[#0E0E11] border border-white/[0.08] space-y-2">
-                <span className="text-xs font-bold text-white block font-manrope">
-                  Subir fondo desde tu dispositivo
-                </span>
-                <p className="text-[11px] text-gray-400">
-                  La imagen se almacena exclusivamente en tu navegador (Base64 DataURL).
+              {/* Upload Local Image or Animated GIF */}
+              <div className="p-4 rounded-xl bg-[#0E0E11] border border-white/[0.08] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5 font-manrope">
+                    <Upload className="w-3.5 h-3.5 text-[#FF9F0A]" />
+                    <span>Subir archivo GIF o foto desde tu equipo</span>
+                  </span>
+                  <span className="text-[10px] text-gray-500 font-mono-code">
+                    IndexedDB (Hasta 15 MB)
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  Los GIFs o imágenes se almacenan exclusivamente en el almacenamiento local de tu navegador sin saturar el servidor backend.
                 </p>
+
+                {/* Upload Active Card if user uploaded file */}
+                {theme.backgroundType === "upload" && uploadedPreviewUrl && (
+                  <div className="p-3 rounded-xl bg-[#141416] border border-[#FF9F0A]/30 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-12 h-12 rounded-lg bg-cover bg-center border border-white/20 shrink-0"
+                        style={{ backgroundImage: `url(${uploadedPreviewUrl})` }}
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#30D158]" />
+                          <span className="text-xs font-bold text-white font-manrope">
+                            {theme.uploadedFileName || "Archivo subido activo"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-mono-code">
+                          {theme.isGif ? "GIF Animado" : "Imagen HD"} • {theme.uploadedFileSize || "Local IndexedDB"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleRemoveUploaded}
+                      className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-[#FF453A] border border-red-500/20 text-xs font-bold font-manrope flex items-center gap-1.5 transition-colors"
+                      title="Eliminar fondo personalizado"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Quitar</span>
+                    </button>
+                  </div>
+                )}
+
                 <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-white/[0.15] hover:border-[#FF9F0A]/50 bg-[#141416] hover:bg-[#1B1B1E] cursor-pointer transition-all text-xs font-bold text-gray-300 hover:text-white">
                   <Upload className="w-4 h-4 text-[#FF9F0A]" />
-                  <span>Seleccionar imagen (máx 2.5 MB)</span>
+                  <span>
+                    {isUploading ? "Guardando en el navegador..." : "Seleccionar archivo GIF o Imagen (máx 15 MB)"}
+                  </span>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.gif"
                     onChange={handleFileUpload}
+                    disabled={isUploading}
                     className="hidden"
                   />
                 </label>
+
                 {uploadError && (
                   <p className="text-xs text-[#FF6961] font-semibold flex items-center gap-1.5 mt-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {uploadError}
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{uploadError}</span>
                   </p>
                 )}
               </div>
@@ -256,9 +475,10 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                   onChange={(e) => onUpdateTheme({ ...theme, bgBlur: parseInt(e.target.value, 10) })}
                   className="w-full accent-[#FF9F0A] cursor-pointer"
                 />
-                <p className="text-[11px] text-gray-400">
-                  Añade un efecto de profundidad cinematográfico detrás de tu bloc de notas.
-                </p>
+                <div className="flex items-center justify-between text-[11px] text-gray-400">
+                  <span>0px (Total nitidez para GIFs animados)</span>
+                  <span>20px (Efecto difuminado ambiental)</span>
+                </div>
               </div>
 
               {/* Panel Opacity Slider */}
@@ -277,7 +497,7 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                   className="w-full accent-[#FF9F0A] cursor-pointer"
                 />
                 <p className="text-[11px] text-gray-400">
-                  Ajusta qué tan visible es el fondo a través de la tarjeta de escritura.
+                  Ajusta qué tan visible es el fondo o GIF animado a través de la tarjeta de escritura.
                 </p>
               </div>
 
@@ -297,7 +517,7 @@ export default function ThemeModal({ theme, onUpdateTheme, onClose }) {
                   className="w-full accent-[#FF9F0A] cursor-pointer"
                 />
                 <p className="text-[11px] text-gray-400">
-                  Oscurece la imagen para garantizar que las letras blancas siempre tengan 100% de legibilidad.
+                  Oscurece la imagen o animación para garantizar que las letras blancas siempre tengan 100% de legibilidad.
                 </p>
               </div>
 

@@ -27,6 +27,7 @@ import {
   loadSavedTheme,
   saveTheme,
   getActiveBackgroundUrl,
+  getUploadedWallpaperBlob,
   DEFAULT_THEME
 } from "../utils/themeManager";
 
@@ -85,8 +86,51 @@ export default function Editor() {
   // Excel-like Math memoized
   const mathResult = useMemo(() => calculateExcelSum(content), [content]);
 
-  // Active Wallpaper URL
-  const bgUrl = useMemo(() => getActiveBackgroundUrl(theme), [theme]);
+  // Active Wallpaper / GIF Background URL (supports Presets, Direct URLs & IndexedDB blobs)
+  const [activeBgUrl, setActiveBgUrl] = useState(() => getActiveBackgroundUrl(theme) || "");
+
+  useEffect(() => {
+    let objectUrl = null;
+    let isCancelled = false;
+
+    async function resolveActiveBackground() {
+      if (theme.backgroundType === "preset") {
+        const syncUrl = getActiveBackgroundUrl(theme);
+        if (!isCancelled) setActiveBgUrl(syncUrl || "");
+        return;
+      }
+      if (theme.backgroundType === "url") {
+        if (!isCancelled) setActiveBgUrl(theme.customImageUrl || "");
+        return;
+      }
+      if (theme.backgroundType === "upload") {
+        try {
+          const blob = await getUploadedWallpaperBlob();
+          if (blob && !isCancelled) {
+            objectUrl = URL.createObjectURL(blob);
+            setActiveBgUrl(objectUrl);
+            return;
+          }
+        } catch (e) {
+          console.warn("Error resolviendo wallpaper de IndexedDB:", e);
+        }
+        if (theme.uploadedImage && !isCancelled) {
+          setActiveBgUrl(theme.uploadedImage);
+          return;
+        }
+      }
+      if (!isCancelled) setActiveBgUrl("");
+    }
+
+    resolveActiveBackground();
+
+    return () => {
+      isCancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [theme]);
 
   const [unlockedPassword, setUnlockedPassword] = useState("");
 
@@ -376,21 +420,21 @@ export default function Editor() {
   return (
     <div className="flex flex-col flex-1 h-full w-full relative">
 
-      {/* 0. CUSTOM WALLPAPER BACKGROUND LAYER (from localStorage) */}
-      {bgUrl && (
+      {/* 0. CUSTOM WALLPAPER / ANIMATED GIF BACKGROUND LAYER */}
+      {activeBgUrl && (
         <div 
           aria-hidden="true"
-          className="fixed inset-0 pointer-events-none z-0 bg-cover bg-center transition-all duration-500"
+          className="fixed inset-0 pointer-events-none z-0 bg-cover bg-center bg-no-repeat transition-all duration-500"
           style={{
-            backgroundImage: `url(${bgUrl})`,
-            filter: `blur(${theme.bgBlur}px)`,
-            transform: 'scale(1.04)',
+            backgroundImage: `url(${activeBgUrl})`,
+            filter: theme.bgBlur > 0 ? `blur(${theme.bgBlur}px)` : "none",
+            transform: theme.bgBlur > 0 ? "scale(1.04)" : "scale(1.0)",
           }}
         />
       )}
 
       {/* Dark tint overlay for contrast and 100% legibility */}
-      {bgUrl && (
+      {activeBgUrl && (
         <div 
           aria-hidden="true"
           className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-300"
