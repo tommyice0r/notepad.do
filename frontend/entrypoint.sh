@@ -26,14 +26,17 @@ window.__APP_CONFIG__ = {
 EOF
 fi
 
-# If an AdSense Publisher ID is provided at runtime in Dokploy, inject into index.html <head> and ads.txt
+# If an AdSense Publisher ID is provided at runtime in Dokploy, inject into all publisher .html files (excluding note.html) and ads.txt
 if [ -n "$ADSENSE_ID" ]; then
   PUB_ID=$(echo "$ADSENSE_ID" | sed 's/^ca-//')
   CA_PUB_ID="ca-$PUB_ID"
-  echo "[Notepad.do] Injecting Google AdSense ($CA_PUB_ID) into index.html and ads.txt"
+  echo "[Notepad.do] Injecting Google AdSense ($CA_PUB_ID) into publisher HTML files and ads.txt"
   echo "google.com, $PUB_ID, DIRECT, f08c47fec0942fa0" > "$ADS_TXT_FILE"
-  if [ -f "$INDEX_FILE" ] && ! grep -q "google-adsense-account" "$INDEX_FILE"; then
-    sed -i "s|</head>|  <meta name=\"google-adsense-account\" content=\"$CA_PUB_ID\" />\n    <script async src=\"https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$CA_PUB_ID\" crossorigin=\"anonymous\" data-adsense-script=\"true\"></script>\n  </head>|" "$INDEX_FILE"
-  fi
+  for HTML_FILE in $(find /usr/share/nginx/html -name "*.html" ! -name "note.html"); do
+    if ! grep -q "google-adsense-account" "$HTML_FILE"; then
+      sed -i "s|</head>|  <meta name=\"google-adsense-account\" content=\"$CA_PUB_ID\" />\n    <script async src=\"https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$CA_PUB_ID\" crossorigin=\"anonymous\" data-adsense-script=\"true\"></script>\n  </head>|" "$HTML_FILE"
+    fi
+  done
 fi
+
 

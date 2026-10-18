@@ -7,6 +7,7 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
   const location = useLocation();
 
   const links = [
+    { to: "/guias", label: "Guías y tutoriales", icon: BookOpen },
     { to: "/acerca-de", label: "Acerca de nosotros", icon: BookOpen },
     { to: "/faq", label: "Preguntas frecuentes", icon: HelpCircle },
     { to: "/privacidad", label: "Política de privacidad", icon: Shield },
@@ -59,7 +60,9 @@ export default function LegalLayout({ title, subtitle, lastUpdated, children }) 
             <nav className="flex md:flex-col gap-1.5 md:gap-1 overflow-x-auto no-scrollbar md:mt-1">
               {links.map((item) => {
                 const Icon = item.icon;
-                const active = location.pathname === item.to;
+                const active =
+                  location.pathname === item.to ||
+                  (item.to === "/guias" && location.pathname.startsWith("/guias/"));
                 return (
                   <Link
                     key={item.to}

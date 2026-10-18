@@ -47,7 +47,7 @@ export default function Landing() {
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-gray-400">
             <a href="#caracteristicas" className="hover:text-white transition-colors">Características</a>
-            <a href="#como-funciona" className="hover:text-white transition-colors">Cómo funciona</a>
+            <Link to="/guias" className="hover:text-white transition-colors">Guías y Tutoriales</Link>
             <Link to="/faq" className="hover:text-white transition-colors">Preguntas</Link>
             <Link to="/acerca-de" className="hover:text-white transition-colors">Acerca de</Link>
             <Link to="/contacto" className="hover:text-white transition-colors">Contacto</Link>
@@ -358,11 +358,12 @@ export default function Landing() {
           </div>
 
           <div>
-            <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3 font-manrope">Herramientas</h4>
+            <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-3 font-manrope">Herramientas y Guías</h4>
             <ul className="space-y-2 text-xs text-gray-400">
               <li><button onClick={handleStartNew} className="hover:text-white transition-colors">Crear Nueva Nota</button></li>
-              <li><a href="#caracteristicas" className="hover:text-white transition-colors">Calculadora y Sumas</a></li>
-              <li><a href="#como-funciona" className="hover:text-white transition-colors">Guía de Uso Rápido</a></li>
+              <li><Link to="/guias" className="hover:text-white transition-colors">Guías y Tutoriales</Link></li>
+              <li><Link to="/guias/presupuesto-mensual-con-variables" className="hover:text-white transition-colors">Presupuesto con Variables</Link></li>
+              <li><Link to="/guias/limpiar-listas-duplicadas" className="hover:text-white transition-colors">Limpiar Listas Duplicadas</Link></li>
             </ul>
           </div>
 
@@ -382,7 +383,7 @@ export default function Landing() {
               <li><Link to="/privacidad" className="hover:text-white transition-colors">Política de Privacidad</Link></li>
               <li><Link to="/terminos" className="hover:text-white transition-colors">Términos del Servicio</Link></li>
               <li><Link to="/cookies" className="hover:text-white transition-colors">Política de Cookies</Link></li>
-              <li><a href="https://www.google.com/settings/ads" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Configurar AdSense</a></li>
+              <li><a href="https://adssettings.google.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">Configurar Anuncios (Google)</a></li>
             </ul>
           </div>
 

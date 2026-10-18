@@ -240,6 +240,9 @@ export async function deleteUploadedWallpaperBlob() {
 
 // Load theme from localStorage
 export function loadSavedTheme() {
+  if (typeof window === "undefined" || typeof localStorage === "undefined") {
+    return DEFAULT_THEME;
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {

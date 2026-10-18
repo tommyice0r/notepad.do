@@ -2,23 +2,27 @@ import LegalLayout from "../components/LegalLayout";
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-function FaqItem({ question, answer, defaultOpen = false }) {
+function FaqItem({ question, answer, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
     <div className="border border-white/[0.08] rounded-xl bg-[#141416] overflow-hidden transition-colors">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-white text-sm sm:text-base hover:text-[#FF9F0A] transition-colors"
+        aria-expanded={open}
+        className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-white text-sm sm:text-base hover:text-[#FF9F0A] transition-colors cursor-pointer"
       >
-        <span>{question}</span>
+        <h2>{question}</h2>
         {open ? <ChevronUp className="w-4 h-4 text-[#FF9F0A] shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-500 shrink-0" />}
       </button>
-      {open && (
-        <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-gray-300 leading-relaxed border-t border-white/[0.04] pt-3">
-          {answer}
-        </div>
-      )}
+      <div
+        className={`px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-gray-300 leading-relaxed border-t border-white/[0.04] pt-3 ${
+          open ? "block" : "hidden"
+        }`}
+      >
+        <p>{answer}</p>
+      </div>
     </div>
   );
 }

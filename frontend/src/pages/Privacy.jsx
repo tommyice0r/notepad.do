@@ -42,28 +42,38 @@ export default function Privacy() {
       <section className="space-y-3 bg-[#1B1B1E]/60 p-5 rounded-xl border border-white/[0.08]">
         <h2 className="text-lg font-bold text-[#FF9F0A]">3. Publicidad y Cookies de Google AdSense (Divulgación Obligatoria)</h2>
         <p>
-          Notepad.do se financia mediante la visualización de publicidad en línea a través del programa <strong>Google AdSense</strong>. En cumplimiento estricto con las políticas de Google y normativas internacionales:
+          Notepad.do utiliza el servicio publicitario <strong>Google AdSense</strong> para financiar la infraestructura gratuita de la plataforma. En cumplimiento estricto con las políticas de Google AdSense y normativas de privacidad vigentes, informamos de manera expresa que:
         </p>
         <ul className="list-disc pl-5 space-y-2 text-gray-300">
           <li>
-            <strong>Proveedores externos:</strong> Google y otros proveedores publicitarios externos utilizan cookies para publicar anuncios basados en las visitas previas de un usuario a este u otros sitios web de Internet.
+            <strong>Uso de cookies por terceros (incluido Google):</strong> Los proveedores terceros, incluido <strong>Google</strong>, utilizan cookies para mostrar anuncios (incluidos anuncios personalizados y no personalizados) en función de las visitas anteriores de un usuario a este sitio web (<strong>notepad.do</strong>) o a otros sitios web de Internet.
           </li>
           <li>
-            <strong>Cookies publicitarias de Google:</strong> El uso de cookies publicitarias permite a Google y a sus socios mostrar anuncios a los usuarios en función de sus visitas a Notepad.do y a otros sitios de la red.
+            <strong>Cookies publicitarias de Google:</strong> El uso de cookies de publicidad permite a Google y a sus socios mostrar anuncios relevantes a los usuarios basándose en sus visitas a nuestros sitios y/o a otros sitios de Internet.
           </li>
           <li>
-            <strong>Inhabilitación de publicidad personalizada:</strong> Los usuarios pueden optar por no recibir publicidad personalizada visitando la página de configuración de anuncios de Google en{" "}
+            <strong>Cómo desactivar los anuncios personalizados:</strong> Los usuarios pueden inhabilitar y desactivar la publicidad personalizada en cualquier momento visitando directamente la página oficial de <strong>Configuración de anuncios de Google</strong> en{" "}
+            <a
+              href="https://adssettings.google.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[#FF9F0A] underline hover:text-white font-mono-code"
+            >
+              adssettings.google.com
+            </a>{" "}
+            (o en{" "}
             <a
               href="https://www.google.com/settings/ads"
               target="_blank"
               rel="noreferrer"
               className="text-[#FF9F0A] underline hover:text-white"
             >
-              Configuración de Anuncios de Google
-            </a>.
+              www.google.com/settings/ads
+            </a>
+            ).
           </li>
           <li>
-            Alternativamente, puedes inhabilitar el uso de cookies para publicidad personalizada de proveedores externos visitando el portal independiente{" "}
+            Alternativamente, puedes desactivar el uso de cookies de proveedores terceros para la publicidad personalizada visitando{" "}
             <a
               href="https://www.aboutads.info/choices/"
               target="_blank"
@@ -79,7 +89,7 @@ export default function Privacy() {
               rel="noreferrer"
               className="text-[#FF9F0A] underline hover:text-white"
             >
-              Your Online Choices (Europa)
+              www.youronlinechoices.eu
             </a>.
           </li>
         </ul>

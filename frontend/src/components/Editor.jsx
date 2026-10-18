@@ -51,10 +51,14 @@ function generateRandomSlug(length = 8) {
 }
 
 export default function Editor({ unlockPrice = 500, onStatusChange }) {
-  const { slug } = useParams();
+  const { slug: routeSlug } = useParams();
   const navigate = useNavigate();
+  const [generatedSlug] = useState(() =>
+    typeof window === "undefined" ? "nueva-nota" : generateRandomSlug()
+  );
+  const slug = routeSlug || generatedSlug;
   const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(routeSlug));
   const [saving, setSaving] = useState(false);
   
   // Migration state
@@ -187,11 +191,18 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   // Fetch note from backend (DB check -> scraper fallback)
   useEffect(() => {
+    if (!routeSlug) {
+      setLoading(false);
+      setIsLocked(false);
+      setShowMigrationPrompt(false);
+      setUnlockError("");
+      return;
+    }
     setLoading(true);
     setIsLocked(false);
     setShowMigrationPrompt(false);
     setUnlockError("");
-    api.get(`/notes/${slug}`)
+    api.get(`/notes/${routeSlug}`)
       .then(response => {
         if (response.data.requires_password) {
           setIsLocked(true);
@@ -212,7 +223,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
       .finally(() => {
         setLoading(false);
       });
-  }, [slug]);
+  }, [routeSlug]);
 
   // Synchronize scroll between textarea and overlay
   const handleScroll = () => {
@@ -252,6 +263,9 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   // Autosave API call with password header support
   const saveNote = (newContent) => {
+    if (!routeSlug) {
+      navigate(`/${slug}`, { replace: true });
+    }
     setSaving(true);
     const headers = unlockedPassword ? { "X-Note-Password": unlockedPassword } : {};
     api.post(`/notes/${slug}`, {
@@ -285,9 +299,14 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const noteFullUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/${slug}`
+      : `https://notepad.do/${slug}`;
+
   // Telegram share
   const handleTelegramShare = () => {
-    const url = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent('Nota compartida en Notepad.do:')}`;
+    const url = `https://t.me/share/url?url=${encodeURIComponent(noteFullUrl)}&text=${encodeURIComponent('Nota compartida en Notepad.do:')}`;
     window.open(url, "_blank");
   };
 
@@ -308,6 +327,9 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   // Lock note with password
   const confirmLock = () => {
     if (!newPassword.trim()) return;
+    if (!routeSlug) {
+      navigate(`/${slug}`, { replace: true });
+    }
     api.post(`/notes/${slug}/lock`, { password: newPassword })
       .then(() => {
         setUnlockedPassword(newPassword);
@@ -1416,7 +1438,8 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 min-w-0">
             <div 
               onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
+                if (!routeSlug) navigate(`/${slug}`, { replace: true });
+                navigator.clipboard.writeText(noteFullUrl);
                 showToast("Enlace copiado al portapapeles");
               }}
               title="Haz clic para copiar el enlace de esta nota"
@@ -1713,12 +1736,13 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 <input 
                   type="text"
                   readOnly
-                  value={window.location.href}
+                  value={noteFullUrl}
                   className="flex-1 min-w-0 bg-[#0E0E11] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-gray-300 font-mono-code outline-none"
                 />
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
+                    if (!routeSlug) navigate(`/${slug}`, { replace: true });
+                    navigator.clipboard.writeText(noteFullUrl);
                     showToast("Enlace copiado");
                   }}
                   className="pf-btn-primary px-3 py-2 text-xs font-bold font-manrope shrink-0"
@@ -1730,7 +1754,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
               {/* QR Code */}
               <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                 <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(window.location.href)}&color=EDEDED&bgcolor=060607`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(noteFullUrl)}&color=EDEDED&bgcolor=060607`}
                   alt="QR Code"
                   className="w-32 h-32 rounded-lg border border-white/[0.08]"
                 />

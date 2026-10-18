@@ -5,8 +5,9 @@ import Editor from "./components/Editor";
 import Admin from "./components/Admin";
 import BrandLogo from "./components/BrandLogo";
 import CookieConsent, { openCookiePreferences } from "./components/CookieConsent";
+import { getSeoForPath, isPublicPublisherRoute } from "./utils/seoConfig";
 
-// AdSense Compliance & Landing Pages
+// AdSense Compliance, Editorial Guides & Landing Pages
 import Landing from "./pages/Landing";
 import About from "./pages/About";
 import Faq from "./pages/Faq";
@@ -15,6 +16,7 @@ import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
 import Contact from "./pages/Contact";
 import Dmca from "./pages/Dmca";
+import { GuidesIndex, GuideArticle, GUIDES_DATA } from "./pages/Guides";
 
 // Normalize and validate Google AdSense Publisher ID (ca-pub-XXXXXXXXXXXXXXXX)
 function normalizeAdSenseClientId(rawClientId) {
@@ -35,91 +37,21 @@ function generateRandomSlug(length = 8) {
   return result;
 }
 
-// Redirect helper for creating a new note while preserving query params (e.g. UTM / gclid)
+// Redirect helper for creating a new note (/nueva) while preserving query params (e.g. UTM / gclid)
 function NewNoteRedirect() {
   const location = useLocation();
   const slug = generateRandomSlug();
   return <Navigate to={`/${slug}${location.search || ""}`} replace />;
 }
 
-// Dynamic SEO & Robots Meta Manager per route
-function RouteSeoManager({ isNoteLocked = false }) {
+// Dynamic SEO, Canonical, Robots Meta & AdSense Route Guard
+function RouteSeoManager({ appConfig }) {
   const location = useLocation();
 
   useEffect(() => {
     const path = location.pathname;
-    const seoMap = {
-      "/info": {
-        title: "Guía y Características — Notepad.do | Bloc de Notas Online y Calculadora",
-        description:
-          "Conoce todas las herramientas de Notepad.do: guardado automático en la nube, calculadora reactiva con variables, cifrado opcional y formatos de texto.",
-        canonical: "https://notepad.do/info",
-        robots: "index, follow",
-      },
-      "/acerca-de": {
-        title: "Acerca de Nosotros — Notepad.do | Productividad y Desarrollo Web",
-        description:
-          "Conoce la misión, arquitectura técnica y equipo detrás de Notepad.do, el bloc de notas minimalista en la nube con cálculo en tiempo real.",
-        canonical: "https://notepad.do/acerca-de",
-        robots: "index, follow",
-      },
-      "/faq": {
-        title: "Preguntas Frecuentes (FAQ) — Notepad.do",
-        description:
-          "Respuestas detalladas sobre cómo funciona Notepad.do, guardado en tiempo real, privacidad con contraseñas, cálculo matemático y límites de uso.",
-        canonical: "https://notepad.do/faq",
-        robots: "index, follow",
-      },
-      "/privacidad": {
-        title: "Política de Privacidad — Notepad.do",
-        description:
-          "Política de tratamiento de datos, almacenamiento en la nube, uso de cookies publicitarias (Google AdSense) y derechos ARCO/RGPD en Notepad.do.",
-        canonical: "https://notepad.do/privacidad",
-        robots: "index, follow",
-      },
-      "/terminos": {
-        title: "Términos y Condiciones de Uso — Notepad.do",
-        description:
-          "Condiciones legales de servicio, reglas de uso aceptable, propiedad intelectual y políticas de moderación de Notepad.do.",
-        canonical: "https://notepad.do/terminos",
-        robots: "index, follow",
-      },
-      "/cookies": {
-        title: "Política de Cookies — Notepad.do",
-        description:
-          "Información transparente sobre el uso de almacenamiento técnico local y cookies de Google AdSense (Google Consent Mode v2) en Notepad.do.",
-        canonical: "https://notepad.do/cookies",
-        robots: "index, follow",
-      },
-      "/contacto": {
-        title: "Contacto y Soporte Técnico — Notepad.do",
-        description:
-          "Ponte en contacto con el equipo de soporte técnico, administración y consultas legales de Notepad.do.",
-        canonical: "https://notepad.do/contacto",
-        robots: "index, follow",
-      },
-      "/reportar-abuso": {
-        title: "Reportar Abuso o Infracción DMCA — Notepad.do",
-        description:
-          "Canal oficial para reportar enlaces que vulneren derechos de autor (DMCA) o nuestras políticas de uso aceptable.",
-        canonical: "https://notepad.do/reportar-abuso",
-        robots: "index, follow",
-      },
-      "/admin": {
-        title: "Administración — Notepad.do",
-        description: "Panel administrativo interno de Notepad.do.",
-        canonical: "https://notepad.do/admin",
-        robots: "noindex, nofollow",
-      },
-    };
-
-    const current = seoMap[path] || {
-      title: "Notepad.do — Bloc de Notas Online Rápido, Código y Calculadora",
-      description:
-        "Bloc de notas online gratuito y minimalista con guardado automático en la nube, calculadora integrada con variables y protección opcional por contraseña.",
-      canonical: "https://notepad.do/",
-      robots: isNoteLocked ? "noindex, nofollow" : "index, follow",
-    };
+    const current = getSeoForPath(path);
+    const isPublicRoute = isPublicPublisherRoute(path);
 
     document.title = current.title;
 
@@ -127,6 +59,15 @@ function RouteSeoManager({ isNoteLocked = false }) {
     if (descMeta) {
       descMeta.setAttribute("content", current.description);
     }
+
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", current.title);
+
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute("content", current.description);
+
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute("content", current.canonical);
 
     let robotsMeta = document.querySelector('meta[name="robots"]');
     if (!robotsMeta) {
@@ -143,7 +84,40 @@ function RouteSeoManager({ isNoteLocked = false }) {
       document.head.appendChild(canonicalLink);
     }
     canonicalLink.setAttribute("href", current.canonical);
-  }, [location.pathname, isNoteLocked]);
+
+    // Strictly restrict AdSense to verified publisher pages only (never on user note slugs /:slug or /admin)
+    window.adsbygoogle = window.adsbygoogle || [];
+    if (!isPublicRoute) {
+      window.adsbygoogle.pauseAdRequests = 1;
+      const existingScript = document.querySelector('script[data-adsense-script="true"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      return;
+    }
+
+    window.adsbygoogle.pauseAdRequests = 0;
+    const clientId = normalizeAdSenseClientId(appConfig?.adsense_client_id);
+    if (!appConfig?.adsense_enabled || !clientId) return;
+
+    let adsenseMeta = document.querySelector('meta[name="google-adsense-account"]');
+    if (!adsenseMeta) {
+      adsenseMeta = document.createElement("meta");
+      adsenseMeta.setAttribute("name", "google-adsense-account");
+      document.head.appendChild(adsenseMeta);
+    }
+    adsenseMeta.setAttribute("content", clientId);
+
+    const existingScript = document.querySelector('script[data-adsense-script="true"]');
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(clientId)}`;
+      script.crossOrigin = "anonymous";
+      script.setAttribute("data-adsense-script", "true");
+      document.head.appendChild(script);
+    }
+  }, [location.pathname, appConfig?.adsense_enabled, appConfig?.adsense_client_id]);
 
   return null;
 }
@@ -153,7 +127,7 @@ function EditorEditorialGuide() {
   return (
     <section
       aria-label="Guía de uso y documentación de Notepad.do"
-      style={{ contentVisibility: "auto", containIntrinsicSize: "420px" }}
+      style={{ contentVisibility: "auto", containIntrinsicSize: "480px" }}
       className="w-full max-w-[1300px] mx-auto mt-5 sm:mt-8 mb-4 bg-[#101012]/90 border border-white/[0.07] rounded-2xl p-4 sm:p-7 text-gray-300 shadow-lg"
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 sm:pb-5 border-b border-white/[0.07]">
@@ -171,14 +145,20 @@ function EditorEditorialGuide() {
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Link
+            to="/guias"
+            className="flex-1 sm:flex-none text-center text-xs font-semibold px-3.5 py-2 rounded-lg bg-[#FF9F0A]/15 hover:bg-[#FF9F0A]/25 text-[#FF9F0A] border border-[#FF9F0A]/30 transition-colors"
+          >
+            Guías paso a paso
+          </Link>
+          <Link
             to="/info"
             className="flex-1 sm:flex-none text-center text-xs font-semibold px-3.5 py-2 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.08] transition-colors"
           >
-            Ver guía completa
+            Características
           </Link>
           <Link
             to="/faq"
-            className="flex-1 sm:flex-none text-center text-xs font-semibold px-3.5 py-2 rounded-lg bg-[#FF9F0A]/15 hover:bg-[#FF9F0A]/25 text-[#FF9F0A] border border-[#FF9F0A]/30 transition-colors"
+            className="flex-1 sm:flex-none text-center text-xs font-semibold px-3.5 py-2 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.08] transition-colors"
           >
             Preguntas frecuentes
           </Link>
@@ -194,7 +174,7 @@ function EditorEditorialGuide() {
           </h2>
           <p className="text-gray-400">
             Cada nota se identifica mediante su ruta en el navegador (por ejemplo, <code className="text-gray-200 font-mono-code">notepad.do/equipo-sprint</code>).
-            Mientras escribes, el sistema sincroniza los cambios en la nube tras una breve pausa de 800 milisegundos y conserva una copia local de respaldo en tu navegador para evitar pérdidas por cortes de conexión.
+            Mientras escribes, el sistema sincroniza los cambios en la nube tras una breve pausa de 700 milisegundos y conserva una copia local de respaldo para evitar pérdidas por cortes de conexión.
           </p>
         </article>
 
@@ -215,21 +195,45 @@ function EditorEditorialGuide() {
         <article className="bg-black/30 border border-white/[0.05] rounded-xl p-3.5 sm:p-4">
           <h2 className="font-bold text-white text-sm mb-2 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
-            <span>3. Herramientas para Desarrolladores y Privacidad</span>
+            <span>3. Herramientas Técnicas y Privacidad</span>
           </h2>
           <p className="text-gray-400">
-            Incluye resaltado automático de fragmentos de código, limpieza rápida de listas (eliminar líneas vacías, ordenar alfabéticamente o quitar duplicados), exportación directa a archivo <code className="text-gray-200 font-mono-code">.txt</code> y protección opcional por contraseña verificada con hash criptográfico.
+            Incluye transformación instantánea a MAYÚSCULAS, minúsculas, Título y Oración en la barra inferior, limpieza de listas duplicadas, alineación de tablas monoespaciadas, exportación a <code className="text-gray-200 font-mono-code">.txt</code> y bloqueo opcional por contraseña.
           </p>
         </article>
+      </div>
+
+      {/* Featured Practical Guides Strip */}
+      <div className="py-4 border-b border-white/[0.07]">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+            Guías prácticas y casos de uso
+          </h3>
+          <Link to="/guias" className="text-xs font-bold text-[#FF9F0A] hover:underline">
+            Ver las {GUIDES_DATA.length} guías →
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          {GUIDES_DATA.map((g) => (
+            <Link
+              key={g.slug}
+              to={`/guias/${g.slug}`}
+              className="px-3.5 py-2.5 rounded-xl bg-black/25 hover:bg-white/[0.05] border border-white/[0.05] transition-colors flex flex-col gap-1"
+            >
+              <span className="text-[10px] font-bold text-[#FF9F0A]">{g.category}</span>
+              <span className="text-xs font-bold text-gray-200 leading-snug">{g.shortTitle}</span>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Practical Keyboard & Workflow Tips */}
       <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-400">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span className="font-semibold text-gray-300">Consejos rápidos:</span>
-          <span>• Usa el botón <strong className="text-gray-200">Compartir</strong> para generar tu código QR.</span>
+          <span>• Usa <strong className="text-gray-200">Compartir</strong> para generar tu código QR.</span>
           <span>• Activa el <strong className="text-gray-200">Candado</strong> si deseas restringir el acceso a tu borrador.</span>
-          <span>• Usa el estudio <strong className="text-gray-200">Aa</strong> para transformar mayúsculas o limpiar listas.</span>
+          <span>• Usa los botones <strong className="text-gray-200">↑AA / ↓aa / ↑Aa / •A.</strong> para transformar todo el bloc en 1 toque.</span>
         </div>
         <div className="flex items-center gap-3 shrink-0 text-gray-400">
           <Link to="/acerca-de" className="hover:text-white underline underline-offset-4 transition-colors">
@@ -245,7 +249,7 @@ function EditorEditorialGuide() {
   );
 }
 
-// Editor Note Page (Clean layout without manual banner slots until AdSense approval)
+// Editor Note Page
 function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
   return (
     <div className="min-h-dvh bg-[#060607] text-[#EDEDED] font-manrope flex flex-col justify-between p-1.5 sm:p-4 md:p-6">
@@ -264,7 +268,7 @@ function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
         />
       </main>
 
-      {/* RICH EDITORIAL DOCUMENTATION (Ensures high-value publisher content for users & AdSense reviewers) */}
+      {/* RICH EDITORIAL DOCUMENTATION */}
       {!editorStatus?.isLocked && <EditorEditorialGuide />}
 
       {/* Minimal Compliance Footer */}
@@ -273,7 +277,9 @@ function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
         <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 sm:gap-3.5">
           <Link to="/nueva" className="hover:text-gray-300 transition-colors">Nuevo</Link>
           <span>·</span>
-          <Link to="/info" className="hover:text-gray-300 transition-colors">Guía</Link>
+          <Link to="/guias" className="hover:text-gray-300 transition-colors">Guías</Link>
+          <span>·</span>
+          <Link to="/info" className="hover:text-gray-300 transition-colors">Características</Link>
           <span>·</span>
           <Link to="/acerca-de" className="hover:text-gray-300 transition-colors">Acerca de</Link>
           <span>·</span>
@@ -325,7 +331,7 @@ function AdminPage() {
   );
 }
 
-export default function App() {
+export function AppContent() {
   const [appConfig, setAppConfig] = useState({
     adsense_enabled: true,
     adsense_client_id: "",
@@ -337,7 +343,7 @@ export default function App() {
   });
 
   const [editorStatus, setEditorStatus] = useState({
-    loading: true,
+    loading: false,
     isLocked: false,
     hasContent: false,
   });
@@ -360,42 +366,29 @@ export default function App() {
     };
   }, []);
 
-  // Dynamically inject Google AdSense verification meta & script once a valid Publisher ID is configured
-  useEffect(() => {
-    const clientId = normalizeAdSenseClientId(appConfig?.adsense_client_id);
-    if (!appConfig?.adsense_enabled || !clientId) return;
-
-    // 1. Ensure <meta name="google-adsense-account" content="ca-pub-..."> exists
-    let adsenseMeta = document.querySelector('meta[name="google-adsense-account"]');
-    if (!adsenseMeta) {
-      adsenseMeta = document.createElement("meta");
-      adsenseMeta.setAttribute("name", "google-adsense-account");
-      document.head.appendChild(adsenseMeta);
-    }
-    adsenseMeta.setAttribute("content", clientId);
-
-    // 2. Ensure official adsbygoogle.js script is loaded
-    const existingScript = document.querySelector('script[data-adsense-script="true"]');
-    if (!existingScript) {
-      const script = document.createElement("script");
-      script.async = true;
-      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(clientId)}`;
-      script.crossOrigin = "anonymous";
-      script.setAttribute("data-adsense-script", "true");
-      document.head.appendChild(script);
-    }
-  }, [appConfig?.adsense_enabled, appConfig?.adsense_client_id]);
-
   return (
-    <Router>
-      <RouteSeoManager isNoteLocked={editorStatus.isLocked} />
+    <>
+      <RouteSeoManager appConfig={appConfig} />
 
       <Routes>
-        {/* Direct notepad at Root (exactly like notepad.pw) */}
-        <Route path="/" element={<NewNoteRedirect />} />
+        {/* Root Home: Direct instant notepad + full editorial guide (stays at / until user types) */}
+        <Route
+          path="/"
+          element={
+            <EditorPage
+              appConfig={appConfig}
+              editorStatus={editorStatus}
+              onEditorStatusChange={setEditorStatus}
+            />
+          }
+        />
 
-        {/* Informative Landing Page at /info for AdSense and visitors */}
+        {/* Informative Landing Page at /info */}
         <Route path="/info" element={<Landing />} />
+
+        {/* Editorial Guides & Step-by-Step Tutorials */}
+        <Route path="/guias" element={<GuidesIndex />} />
+        <Route path="/guias/:guideSlug" element={<GuideArticle />} />
 
         {/* Note Generator */}
         <Route path="/nueva" element={<NewNoteRedirect />} />
@@ -412,7 +405,7 @@ export default function App() {
         {/* Admin Dashboard */}
         <Route path="/admin" element={<AdminPage />} />
 
-        {/* Note Editor View (Direct slug access: /mi-nota, /abc12345, etc.) */}
+        {/* Note Editor View (Direct slug access: /mi-nota, /abc12345 — always noindex & no ads) */}
         <Route
           path="/:slug"
           element={
@@ -427,6 +420,14 @@ export default function App() {
 
       {/* Global AdSense / GDPR Cookie Consent Banner */}
       <CookieConsent />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
