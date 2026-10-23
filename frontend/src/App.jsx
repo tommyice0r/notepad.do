@@ -28,11 +28,10 @@ function normalizeAdSenseClientId(rawClientId) {
   return /^ca-pub-\d{10,20}$/.test(normalized) ? normalized : "";
 }
 
-// Redirect helper for creating a new note (/nueva) while preserving query params (e.g. UTM / gclid)
+// Redirect helper for creating a new note (/nueva); tracking params are dropped so the shared note URL stays short
 function NewNoteRedirect() {
-  const location = useLocation();
   const [slug] = useState(createFreshSlug);
-  return <Navigate to={`/${slug}${location.search || ""}`} replace />;
+  return <Navigate to={`/${slug}`} replace />;
 }
 
 // Dynamic SEO, Canonical, Robots Meta & AdSense Route Guard
@@ -249,7 +248,7 @@ function EditorEditorialGuide() {
 }
 
 // Cross-promo banner for klk.pw (IP / VPN / leak checker from the same ecosystem)
-const KLK_URL = "https://klk.pw/?utm_source=notepad.do&utm_medium=referral&utm_campaign=cross_promo";
+const KLK_URL = "https://klk.pw/";
 
 function KlkPromoBanner() {
   return (

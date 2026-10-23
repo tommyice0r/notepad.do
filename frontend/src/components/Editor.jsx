@@ -58,10 +58,15 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(() => Boolean(routeSlug));
 
-  // Visitors landing on "/" get their note URL immediately instead of only after the first autosave
+  // Visitors landing on "/" get their note URL immediately instead of only after the first autosave.
+  // Note URLs are meant to be copied and shared, so query strings (utm_*, gclid, fbclid…) are dropped.
   useEffect(() => {
-    if (routeSlug || isCrawler()) return;
-    navigate(`/${createFreshSlug()}${window.location.search}${window.location.hash}`, { replace: true });
+    if (isCrawler()) return;
+    if (!routeSlug) {
+      navigate(`/${createFreshSlug()}`, { replace: true });
+    } else if (window.location.search) {
+      navigate(`/${routeSlug}${window.location.hash}`, { replace: true });
+    }
   }, [routeSlug, navigate]);
   const [saving, setSaving] = useState(false);
   
