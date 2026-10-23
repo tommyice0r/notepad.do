@@ -41,14 +41,12 @@ import {
   DEFAULT_THEME
 } from "../utils/themeManager";
 
-function generateRandomSlug(length = 8) {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+import { generateRandomSlug, createFreshSlug, consumeFreshSlug, isCrawler } from "../utils/noteSlug";
+
+// Inspector lists are capped so notes with thousands of lines stay responsive (extract buttons still copy everything)
+const INSPECTOR_LIMIT = 150;
+// Above this size, pattern/math analysis and the highlight overlay run after a typing pause instead of per keystroke
+const LARGE_NOTE_CHARS = 50000;
 
 export default function Editor({ unlockPrice = 500, onStatusChange }) {
   const { slug: routeSlug } = useParams();
@@ -59,6 +57,12 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   const slug = routeSlug || generatedSlug;
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(() => Boolean(routeSlug));
+
+  // Visitors landing on "/" get their note URL immediately instead of only after the first autosave
+  useEffect(() => {
+    if (routeSlug || isCrawler()) return;
+    navigate(`/${createFreshSlug()}${window.location.search}${window.location.hash}`, { replace: true });
+  }, [routeSlug, navigate]);
   const [saving, setSaving] = useState(false);
   
   // Migration state
@@ -100,12 +104,28 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   const textareaRef = useRef(null);
   const overlayRef = useRef(null);
+  const gutterRef = useRef(null);
+
+  // Large notes are analyzed on a debounced copy so typing never waits on the detectors
+  const [debouncedContent, setDebouncedContent] = useState(content);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedContent(content), 400);
+    return () => clearTimeout(timer);
+  }, [content]);
+  const analysisContent = content.length < LARGE_NOTE_CHARS ? content : debouncedContent;
 
   // Pattern detection memoized
-  const patterns = useMemo(() => detectAllPatterns(content), [content]);
+  const patterns = useMemo(() => detectAllPatterns(analysisContent), [analysisContent]);
 
   // Excel-like Math memoized
-  const mathResult = useMemo(() => calculateExcelSum(content), [content]);
+  const mathResult = useMemo(() => calculateExcelSum(analysisContent), [analysisContent]);
+
+  // Highlight overlay mirrors the textarea per keystroke, so it is only rendered for normal-sized notes
+  const overlayEnabled = content.length < LARGE_NOTE_CHARS;
+  const overlayHtml = useMemo(
+    () => (overlayEnabled ? generateSafeOverlayHtml(content) : ""),
+    [overlayEnabled, content]
+  );
 
   // Live 2FA TOTP code ticker (only active when 2FA seeds exist in the note)
   useEffect(() => {
@@ -198,6 +218,17 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
       setUnlockError("");
       return;
     }
+    // Brand-new note created in this tab: start empty without a network round trip
+    if (consumeFreshSlug(routeSlug)) {
+      setContent("");
+      setUnlockedPassword("");
+      setLoading(false);
+      setIsLocked(false);
+      setShowMigrationPrompt(false);
+      setUnlockError("");
+      return;
+    }
+    setUnlockedPassword("");
     setLoading(true);
     setIsLocked(false);
     setShowMigrationPrompt(false);
@@ -225,13 +256,20 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
       });
   }, [routeSlug]);
 
-  // Synchronize scroll between textarea and overlay
+  // Synchronize scroll between textarea, overlay and line-number gutter
   const handleScroll = () => {
-    if (textareaRef.current && overlayRef.current) {
-      overlayRef.current.scrollTop = textareaRef.current.scrollTop;
-      overlayRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    const ta = textareaRef.current;
+    if (!ta) return;
+    if (overlayRef.current) {
+      overlayRef.current.scrollTop = ta.scrollTop;
+      overlayRef.current.scrollLeft = ta.scrollLeft;
+    }
+    if (gutterRef.current) {
+      gutterRef.current.style.transform = `translateY(${-ta.scrollTop}px)`;
     }
   };
+
+  useEffect(handleScroll, [showLineNumbers, overlayEnabled]);
 
   // Toast notification helper
   const showToast = (msg) => {
@@ -274,6 +312,11 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
     }, { headers })
     .catch(err => {
       console.error("Error guardando:", err);
+      showToast(
+        err.response?.status === 413
+          ? "La nota es demasiado grande para guardarse"
+          : "No se pudo guardar. Reintentando al seguir escribiendo…"
+      );
     })
     .finally(() => {
       setTimeout(() => setSaving(false), 300);
@@ -312,8 +355,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   // New Note button action
   const handleNewNote = () => {
-    const newSlug = generateRandomSlug();
-    navigate(`/${newSlug}`);
+    navigate(`/${createFreshSlug()}`);
   };
 
   // Insert Excel-like Total summary
@@ -445,9 +487,20 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   };
 
   // Statistics
-  const linesCount = content ? content.split("\n").length : 1;
-  const wordsCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  const linesCount = useMemo(() => {
+    let count = 1;
+    for (let i = content.indexOf("\n"); i !== -1; i = content.indexOf("\n", i + 1)) count++;
+    return count;
+  }, [content]);
+  const wordsCount = useMemo(
+    () => (analysisContent.trim() ? analysisContent.trim().split(/\s+/).length : 0),
+    [analysisContent]
+  );
   const charsCount = content.length;
+  const lineNumbersText = useMemo(
+    () => Array.from({ length: Math.max(linesCount, 24) }, (_, i) => i + 1).join("\n"),
+    [linesCount]
+  );
 
   const totalDetections =
     patterns.counts.cards +
@@ -734,15 +787,16 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           onClick={() => textareaRef.current?.focus()}
           className="flex-1 w-full flex flex-row min-h-[55dvh] sm:min-h-[500px] lg:min-h-[580px] relative bg-transparent cursor-text self-stretch"
         >
-          {/* Line Numbers Gutter */}
+          {/* Line Numbers Gutter (absolute inner column so long notes never stretch the page; follows textarea scroll) */}
           {showLineNumbers && (
-            <div 
-              className="w-9 sm:w-12 bg-black/30 border-r border-white/[0.06] select-none py-3.5 sm:py-6 px-1 flex flex-col text-right text-gray-600 text-xs shrink-0 overflow-hidden leading-[1.7]"
-              style={{ fontFamily: activeFontFamily }}
+            <div
+              aria-hidden="true"
+              className="relative w-9 sm:w-12 bg-black/30 border-r border-white/[0.06] select-none text-right text-gray-600 text-xs shrink-0 overflow-hidden"
+              style={{ fontFamily: activeFontFamily, lineHeight: `${fontSize * 1.7}px` }}
             >
-              {Array.from({ length: Math.max(linesCount, 24) }).map((_, i) => (
-                <div key={i}>{i + 1}</div>
-              ))}
+              <div ref={gutterRef} className="absolute inset-x-0 top-0 py-3.5 sm:py-6 px-1 whitespace-pre will-change-transform">
+                {lineNumbersText}
+              </div>
             </div>
           )}
 
@@ -758,7 +812,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 fontSize: `${fontSize}px`,
                 fontFamily: activeFontFamily
               }}
-              dangerouslySetInnerHTML={{ __html: generateSafeOverlayHtml(content) }}
+              dangerouslySetInnerHTML={{ __html: overlayHtml }}
             />
 
             {/* Native Textarea */}
@@ -1071,7 +1125,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       Autenticador 2FA (TOTP en Tiempo Real)
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {patterns.totpSecrets.map((item, idx) => {
+                      {patterns.totpSecrets.slice(0, INSPECTOR_LIMIT).map((item, idx) => {
                         const otp = totpCodes[item.secret];
                         return (
                           <div
@@ -1117,7 +1171,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {patterns.checklist.items.map((item, idx) => (
+                      {patterns.checklist.items.slice(0, INSPECTOR_LIMIT).map((item, idx) => (
                         <button
                           key={idx}
                           type="button"
@@ -1145,7 +1199,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       Decodificador Automático (JWT / Base64)
                     </span>
                     <div className="grid grid-cols-1 gap-2">
-                      {patterns.decodedItems.map((dec, idx) => (
+                      {patterns.decodedItems.slice(0, INSPECTOR_LIMIT).map((dec, idx) => (
                         <div
                           key={idx}
                           className="p-2.5 rounded-xl bg-[#141416] border border-indigo-500/25 flex items-center justify-between gap-3 text-xs"
@@ -1179,7 +1233,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       Series Numéricas
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                      {patterns.cards.map((card, idx) => {
+                      {patterns.cards.slice(0, INSPECTOR_LIMIT).map((card, idx) => {
                         const isRevealed = revealedCards[idx];
                         const isCvvRevealed = revealedCvv[idx];
                         return (
@@ -1265,7 +1319,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       Contraseñas Detectadas
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {patterns.passwords.map((pwd, idx) => {
+                      {patterns.passwords.slice(0, INSPECTOR_LIMIT).map((pwd, idx) => {
                         const isRevealed = revealedPasswords[idx];
                         return (
                           <div 
@@ -1312,7 +1366,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       Enlaces Web
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {patterns.urls.map((urlObj, idx) => (
+                      {patterns.urls.slice(0, INSPECTOR_LIMIT).map((urlObj, idx) => (
                         <div 
                           key={idx}
                           className="px-3 py-2 rounded-xl bg-[#141416] border border-white/[0.08] flex items-center justify-between gap-2 text-xs"
@@ -1374,7 +1428,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       </div>
                     )}
 
-                    {patterns.crypto.map((c, idx) => (
+                    {patterns.crypto.slice(0, INSPECTOR_LIMIT).map((c, idx) => (
                       <div key={`c-${idx}`} className="flex items-center gap-1.5 text-xs bg-[#141416] px-2 py-1 rounded-lg border border-white/[0.06]">
                         <span className="text-yellow-400 font-bold text-[10px]">{c.badge}:</span>
                         <span className="font-mono-code text-[10px] text-gray-300 max-w-[120px] truncate">{c.address}</span>
@@ -1387,7 +1441,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       </div>
                     ))}
 
-                    {patterns.txids.map((tx, idx) => (
+                    {patterns.txids.slice(0, INSPECTOR_LIMIT).map((tx, idx) => (
                       <div key={`tx-${idx}`} className="flex items-center gap-1.5 text-xs bg-[#141416] px-2 py-1 rounded-lg border border-emerald-500/25">
                         <span className="text-emerald-400 font-bold text-[10px]">TXID:</span>
                         <span className="font-mono-code text-[10px] text-gray-300 max-w-[100px] truncate">{tx.hash}</span>
@@ -1403,7 +1457,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       </div>
                     ))}
 
-                    {patterns.handles.map((h, idx) => (
+                    {patterns.handles.slice(0, INSPECTOR_LIMIT).map((h, idx) => (
                       <a
                         key={`h-${idx}`}
                         href={h.url}
@@ -1416,7 +1470,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                       </a>
                     ))}
 
-                    {patterns.timestamps.map((ts, idx) => (
+                    {patterns.timestamps.slice(0, INSPECTOR_LIMIT).map((ts, idx) => (
                       <div key={`ts-${idx}`} className="flex items-center gap-1.5 text-[10px] bg-[#141416] px-2 py-1 rounded-lg border border-white/[0.06] text-gray-300 font-mono-code">
                         <span className="text-gray-500">{ts.raw} ➔</span>
                         <span>{ts.formatted}</span>

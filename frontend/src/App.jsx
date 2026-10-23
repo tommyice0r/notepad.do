@@ -6,6 +6,7 @@ import Admin from "./components/Admin";
 import BrandLogo from "./components/BrandLogo";
 import CookieConsent, { openCookiePreferences } from "./components/CookieConsent";
 import { getSeoForPath, isPublicPublisherRoute } from "./utils/seoConfig";
+import { createFreshSlug } from "./utils/noteSlug";
 
 // AdSense Compliance, Editorial Guides & Landing Pages
 import Landing from "./pages/Landing";
@@ -27,20 +28,10 @@ function normalizeAdSenseClientId(rawClientId) {
   return /^ca-pub-\d{10,20}$/.test(normalized) ? normalized : "";
 }
 
-// Generator for short note URLs
-function generateRandomSlug(length = 8) {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
 // Redirect helper for creating a new note (/nueva) while preserving query params (e.g. UTM / gclid)
 function NewNoteRedirect() {
   const location = useLocation();
-  const slug = generateRandomSlug();
+  const [slug] = useState(createFreshSlug);
   return <Navigate to={`/${slug}${location.search || ""}`} replace />;
 }
 
@@ -384,7 +375,7 @@ export function AppContent() {
       <RouteSeoManager appConfig={appConfig} />
 
       <Routes>
-        {/* Root Home: Direct instant notepad + full editorial guide (stays at / until user types) */}
+        {/* Root Home: instant notepad + editorial guide; visitors are moved to a fresh /:slug on load, crawlers stay at / */}
         <Route
           path="/"
           element={

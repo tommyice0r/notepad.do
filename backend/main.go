@@ -5,6 +5,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -206,9 +207,9 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// 2. Security Middlewares: Headers, Max Body Limit (5MB)
+	// 2. Security Middlewares: Headers, Max Body Limit (20MB, room for notes with tens of thousands of lines)
 	r.Use(securityHeaders)
-	r.Use(maxBodySize(5 * 1024 * 1024))
+	r.Use(maxBodySize(20 * 1024 * 1024))
 
 	// 3. CORS Middleware (Configurable via CORS_ORIGINS env, with universal safe fallback)
 	allowedOrigins := []string{"*"}
@@ -352,6 +353,11 @@ func main() {
 			}
 
 			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				var tooLarge *http.MaxBytesError
+				if errors.As(err, &tooLarge) {
+					jsonResponse(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "La nota supera el tamaño máximo permitido"})
+					return
+				}
 				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Cuerpo de solicitud no válido"})
 				return
 			}

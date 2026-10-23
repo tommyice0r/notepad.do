@@ -266,8 +266,10 @@ export function detectAllPatterns(text) {
   // --- USERS / EMAILS DETECTION ---
   const users = [];
   const userRegex = /(?:user|usuario|username|login|email|correo|cuenta)[:=]\s*([^\s\n\r,;|]+)/gi;
+  const seenUserValues = new Set();
   let userMatch;
   while ((userMatch = userRegex.exec(text)) !== null) {
+    seenUserValues.add(userMatch[1]);
     users.push({
       full: userMatch[0],
       value: userMatch[1]
@@ -276,7 +278,8 @@ export function detectAllPatterns(text) {
   const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,7}\b/g;
   let emailMatch;
   while ((emailMatch = emailRegex.exec(text)) !== null) {
-    if (!users.some(u => u.value === emailMatch[0])) {
+    if (!seenUserValues.has(emailMatch[0])) {
+      seenUserValues.add(emailMatch[0]);
       users.push({
         full: emailMatch[0],
         value: emailMatch[0]
