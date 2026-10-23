@@ -248,6 +248,46 @@ function EditorEditorialGuide() {
   );
 }
 
+// Cross-promo banner for klk.pw (IP / VPN / leak checker from the same ecosystem)
+const KLK_URL = "https://klk.pw/?utm_source=notepad.do&utm_medium=referral&utm_campaign=cross_promo";
+
+function KlkPromoBanner() {
+  return (
+    <aside
+      aria-label="También del ecosistema: klk.pw"
+      className="w-full max-w-[1300px] mx-auto mb-4 rounded-2xl border border-[#FABD00]/30 bg-[radial-gradient(120%_140%_at_0%_0%,rgba(250,189,0,0.12),transparent_55%)] bg-[#141312] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3.5 sm:gap-5"
+    >
+      <div aria-hidden="true" className="w-11 h-11 shrink-0 rounded-xl bg-[#FABD00]/10 border border-[#FABD00]/30 flex items-center justify-center">
+        <svg viewBox="-62 -62 124 124" width="28" height="28">
+          <g fill="none" stroke="#F2A623" strokeWidth="7" strokeLinejoin="round">
+            {[[0, 0], [38.1, 0], [19.05, 33], [-19.05, 33], [-38.1, 0], [-19.05, -33], [19.05, -33]].map(([x, y]) => (
+              <polygon key={`${x},${y}`} transform={`translate(${x},${y})`} points="0,-17 14.72,-8.5 14.72,8.5 0,17 -14.72,8.5 -14.72,-8.5" />
+            ))}
+          </g>
+          <polygon points="0,-8 6.93,-4 6.93,4 0,8 -6.93,4 -6.93,-4" fill="#E2482D" />
+        </svg>
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">También del ecosistema</span>
+        <p className="text-sm sm:text-base font-extrabold text-white leading-snug mt-0.5">
+          ¿Klk con esa IP? Revísala en <span className="text-white">klk</span><span className="text-[#E2482D]">.</span><span className="text-[#FABD00]">pw</span>
+        </p>
+        <p className="text-xs sm:text-[13px] text-gray-400 mt-1 leading-relaxed">
+          Mira tu IP y ubicación, comprueba si tu VPN o proxy se detecta y revisa fugas de WebRTC, DNS y tu huella digital. Gratis y sin guardar datos.
+        </p>
+      </div>
+      <a
+        href={KLK_URL}
+        target="_blank"
+        rel="noopener"
+        className="shrink-0 text-center text-xs font-extrabold uppercase tracking-wider px-4 py-2.5 rounded-xl bg-[#FFC107] hover:brightness-110 text-[#3F2E00] border border-[#FABD00] shadow-[0_0_18px_rgba(255,193,7,0.25)] transition-all active:scale-[0.97]"
+      >
+        Revisar mi IP →
+      </a>
+    </aside>
+  );
+}
+
 // Editor Note Page
 function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
   return (
@@ -269,6 +309,9 @@ function EditorPage({ appConfig, editorStatus, onEditorStatusChange }) {
 
       {/* RICH EDITORIAL DOCUMENTATION */}
       {!editorStatus?.isLocked && <EditorEditorialGuide />}
+
+      {/* ECOSYSTEM CROSS-PROMO */}
+      <KlkPromoBanner />
 
       {/* Minimal Compliance Footer */}
       <footer className="w-full max-w-[1300px] mx-auto pt-3 pb-2 text-center text-[11px] text-gray-500 flex flex-col sm:flex-row items-center justify-between px-2 gap-2 border-t border-white/[0.04]">
