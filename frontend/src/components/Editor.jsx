@@ -80,6 +80,9 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   const [unlockError, setUnlockError] = useState("");
   const [showLockModal, setShowLockModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [lockMode, setLockMode] = useState("private");
+  // Read-only note: anyone can read it, the password is only needed to edit
+  const [readOnlyNote, setReadOnlyNote] = useState(false);
 
   // Editor Preferences (16px on mobile prevents iOS Safari auto-zoom; line numbers hidden by default on narrow screens)
   const [fontSize, setFontSize] = useState(() =>
@@ -224,6 +227,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
       return;
     }
     // Brand-new note created in this tab: start empty without a network round trip
+    setReadOnlyNote(false);
     if (consumeFreshSlug(routeSlug)) {
       setContent("");
       setUnlockedPassword("");
@@ -246,7 +250,10 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           return;
         }
 
-        if (response.data.suggest_migration) {
+        if (response.data.read_only) {
+          setReadOnlyNote(true);
+          setContent(response.data.content || "");
+        } else if (response.data.suggest_migration) {
           setMigratedContent(response.data.content);
           setShowMigrationPrompt(true);
         } else {
@@ -305,7 +312,17 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   };
 
   // Autosave API call with password header support
+  const editLocked = readOnlyNote && !unlockedPassword;
+
+  // Blocks content-changing actions on a read-only note until the password is entered
+  const blockIfReadOnly = () => {
+    if (!editLocked) return false;
+    showToast("Nota de solo lectura: introduce la clave para editar");
+    return true;
+  };
+
   const saveNote = (newContent) => {
+    if (editLocked) return;
     if (!routeSlug) {
       navigate(`/${slug}`, { replace: true });
     }
@@ -365,6 +382,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   // Insert Excel-like Total summary
   const handleInsertTotal = () => {
+    if (blockIfReadOnly()) return;
     const updated = appendTotalSummary(content);
     setContent(updated);
     saveNote(updated);
@@ -377,12 +395,13 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
     if (!routeSlug) {
       navigate(`/${slug}`, { replace: true });
     }
-    api.post(`/notes/${slug}/lock`, { password: newPassword })
+    api.post(`/notes/${slug}/lock`, { password: newPassword, mode: lockMode })
       .then(() => {
         setUnlockedPassword(newPassword);
+        setReadOnlyNote(lockMode === "readonly");
         setIsLocked(false);
         setShowLockModal(false);
-        showToast("Nota bloqueada con contraseña segura");
+        showToast(lockMode === "readonly" ? "Nota en solo lectura: solo tú puedes editarla" : "Nota bloqueada con contraseña segura");
       })
       .catch((err) => {
         alert(err.response?.data?.error || "No se pudo proteger la nota.");
@@ -432,6 +451,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   // Smart organizer for text, combos, URLs, nodes, JSON, and math (variables + %)
   const handleAutoOrganize = () => {
+    if (blockIfReadOnly()) return;
     if (!content.trim()) return;
     let formatted = evaluateInlineMath(content);
     formatted = autoFormatNotepadContent(formatted);
@@ -442,6 +462,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   // Non-intrusive 1-click text enrichment actions
   const applyTextTransform = (transformFn, msg) => {
+    if (blockIfReadOnly()) return;
     if (!content.trim()) return;
     const updated = transformFn(content);
     setContent(updated);
@@ -451,6 +472,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
   };
 
   const handleToggleChecklistItem = (lineIdx) => {
+    if (blockIfReadOnly()) return;
     const lines = content.split("\n");
     if (lineIdx < 0 || lineIdx >= lines.length) return;
     lines[lineIdx] = lines[lineIdx].replace(/^(\s*(?:[-*•]|\d+\.)?\s*)\[([ xX✓✔])\]/, (full, prefix, state) => {
@@ -471,6 +493,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
 
   // Transform case (UPPERCASE, lowercase, Title Case, Sentence case) on entire notepad + live typing mode
   const handleCaseTransform = (mode, label) => {
+    if (blockIfReadOnly()) return;
     const hasText = content.trim().length > 0;
     const updated = hasText ? transformTextCase(content, mode) : content;
 
@@ -682,7 +705,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           
           {/* Left: Notepad Brand Logo */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-            <Link to="/" className="flex items-center gap-1.5 sm:gap-2 group shrink-0">
+            <Link to="/" className="hidden sm:flex items-center gap-2 group shrink-0">
               <BrandLogo accentColor={theme.accentColor} size="sm" />
               <span className="font-extrabold text-sm sm:text-base tracking-tight text-white group-hover:opacity-90 transition-colors font-manrope">
                 notepad<span style={{ color: theme.accentColor }}>.do</span>
@@ -690,16 +713,16 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             </Link>
 
             {/* Autosave status pill */}
-            <div className="ml-0.5 sm:ml-2 shrink-0">
+            <div className="sm:ml-2 shrink-0">
               {saving ? (
                 <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-[#FF9F0A]/12 border border-[#FF9F0A]/25 text-[#FF9F0A] text-[10px] font-extrabold">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FF9F0A] animate-pulse"></span>
-                  <span className="hidden sm:inline">Guardando...</span>
+                  <span className="hidden min-[360px]:inline">Guardando...</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-[#30D158]/12 border border-[#30D158]/25 text-[#30D158] text-[10px] font-extrabold" title="Sincronizado en la nube">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#30D158]"></span>
-                  <span className="hidden sm:inline">Guardado</span>
+                  <span className="hidden min-[360px]:inline">Guardado</span>
                 </span>
               )}
             </div>
@@ -712,7 +735,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={() => setShowThemeModal(true)}
               title="Personalizar fondos, vidrio y tipografías (guardado en tu navegador)"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0"
+              className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0"
             >
               <Palette className="w-4 h-4 text-[#FF9F0A]" />
             </button>
@@ -724,7 +747,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 showToast(!privacyMode ? "Modo Privacidad activado (datos ocultos)" : "Modo Privacidad desactivado");
               }}
               title={privacyMode ? "Desactivar modo privacidad" : "Activar modo privacidad (ocultar datos sensibles)"}
-              className={`w-8 h-8 rounded-lg border transition-all flex items-center justify-center shrink-0 ${
+              className={`w-9 h-9 sm:w-8 sm:h-8 rounded-lg border transition-all flex items-center justify-center shrink-0 ${
                 privacyMode 
                   ? "bg-[#FF9F0A]/20 text-[#FF9F0A] border-[#FF9F0A]/40 shadow-sm" 
                   : "bg-[#1B1B1E] hover:bg-[#25252A] border-white/[0.08] text-gray-400 hover:text-white"
@@ -737,7 +760,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={handleNewNote}
               title="Crear nueva nota"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0"
+              className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0"
             >
               <Plus className="w-4 h-4 text-[#FF9F0A]" />
             </button>
@@ -746,7 +769,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={() => setShowLockModal(true)}
               title="Proteger nota con contraseña"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF6961] flex items-center justify-center transition-all active:scale-95 shrink-0"
+              className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF6961] flex items-center justify-center transition-all active:scale-95 shrink-0"
             >
               <Lock className="w-4 h-4" />
             </button>
@@ -755,7 +778,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={handleCopyAll}
               title="Copiar todo el contenido"
-              className={`flex items-center justify-center gap-1 w-8 sm:w-auto sm:px-3 h-8 rounded-lg text-xs font-bold transition-all shrink-0 ${
+              className={`flex items-center justify-center gap-1 w-9 h-9 sm:w-auto sm:px-3 sm:h-8 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 copied
                   ? "bg-[#30D158]/20 text-[#30D158] border border-[#30D158]/40"
                   : "pf-btn-primary"
@@ -769,7 +792,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={() => setShowShareModal(true)}
               title="Compartir enlace o código QR"
-              className="w-8 h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all shrink-0"
+              className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white flex items-center justify-center transition-all shrink-0"
             >
               <Share2 className="w-4 h-4" />
             </button>
@@ -786,6 +809,40 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           </div>
 
         </div>
+
+        {/* READ-ONLY NOTICE: visitors can read; the password unlocks editing */}
+        {readOnlyNote && (
+          <div className="px-2.5 sm:px-4 py-2 border-b border-white/[0.08] bg-sky-500/[0.07] flex flex-col sm:flex-row sm:items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 text-sky-300 min-w-0 flex-1">
+              {editLocked ? <Eye className="w-4 h-4 shrink-0" /> : <Unlock className="w-4 h-4 shrink-0" />}
+              <span className="font-semibold">
+                {editLocked ? "Solo lectura · introduce la clave para editar" : "Edición desbloqueada con tu clave"}
+              </span>
+            </div>
+            {editLocked && (
+              <div className="flex gap-1.5 w-full sm:w-auto">
+                <input
+                  type="password"
+                  placeholder="Clave de edición"
+                  value={passwordInput}
+                  onChange={e => setPasswordInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleVerifyPassword()}
+                  className="flex-1 sm:w-44 min-w-0 bg-[#0E0E11] border border-white/[0.08] rounded-lg px-3 py-1.5 text-white placeholder-gray-500 text-base sm:text-xs focus:outline-none focus:border-sky-400 font-mono-code"
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyPassword}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-400/30 font-bold"
+                >
+                  Editar
+                </button>
+              </div>
+            )}
+            {editLocked && unlockError && (
+              <p className="text-[11px] text-[#FF6961] font-semibold">{unlockError}</p>
+            )}
+          </div>
+        )}
 
         {/* 2. MAIN EXPANSIVE TEXTAREA CANVAS */}
         <div 
@@ -823,7 +880,8 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             {/* Native Textarea */}
             <textarea
               ref={textareaRef}
-              autoFocus
+              autoFocus={!editLocked}
+              readOnly={editLocked}
               onScroll={handleScroll}
               value={content}
               onChange={(e) => {
@@ -1502,7 +1560,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 showToast("Enlace copiado al portapapeles");
               }}
               title="Haz clic para copiar el enlace de esta nota"
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white cursor-pointer transition-colors font-mono-code text-[11px] min-w-0 max-w-[155px] sm:max-w-[240px]"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 sm:py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-white cursor-pointer transition-colors font-mono-code text-[11px] min-w-0 max-w-[155px] sm:max-w-[240px]"
             >
               <span className="text-gray-500 shrink-0">Enlace:</span>
               <span className="text-[#FF9F0A] truncate">/{slug}</span>
@@ -1539,7 +1597,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             <button
               onClick={handleAutoOrganize}
               title="Organizar texto, dar formato limpio y resolver cálculos (variables y %)"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF9F0A] text-[11px] font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] font-manrope cursor-pointer ml-auto sm:ml-0 shrink-0"
+              className="flex items-center gap-1 px-2.5 py-2 sm:py-1 rounded-lg bg-[#1B1B1E] hover:bg-[#25252A] border border-white/[0.08] text-gray-300 hover:text-[#FF9F0A] text-[11px] font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] font-manrope cursor-pointer ml-auto sm:ml-0 shrink-0"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#FF9F0A] shrink-0" />
               <span>Organizar</span>
@@ -1547,7 +1605,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
           </div>
 
           {/* Right / Bottom Mobile Row: Outside Mobile-Icon Case Buttons, Word Counters, Zoom, Line Numbers & Quick Clean Menu */}
-          <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2.5 pt-1.5 sm:pt-0 border-t border-white/[0.05] sm:border-t-0 text-gray-400 text-[11px]">
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2.5 pt-1.5 sm:pt-0 border-t border-white/[0.05] sm:border-t-0 text-gray-400 text-[11px]">
             <div className="hidden sm:flex items-center gap-1.5 font-mono-code text-[11px] text-gray-500 tabular-nums">
               <span>{linesCount}L</span>
               <span>·</span>
@@ -1566,7 +1624,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 type="button"
                 onClick={() => handleCaseTransform("upper", "MAYÚSCULAS")}
                 title="Todo el bloc en MAYÚSCULAS (y escribir en mayúsculas)"
-                className={`px-1.5 sm:px-2 py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
+                className={`px-1.5 sm:px-2 py-2.5 sm:py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
                   activeCaseMode === "upper"
                     ? "bg-[#FF9F0A] text-black shadow-sm"
                     : "text-gray-300 hover:text-white hover:bg-white/[0.06]"
@@ -1580,7 +1638,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 type="button"
                 onClick={() => handleCaseTransform("lower", "minúsculas")}
                 title="Todo el bloc en minúsculas (y escribir en minúsculas)"
-                className={`px-1.5 sm:px-2 py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
+                className={`px-1.5 sm:px-2 py-2.5 sm:py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
                   activeCaseMode === "lower"
                     ? "bg-[#FF9F0A] text-black shadow-sm"
                     : "text-gray-300 hover:text-white hover:bg-white/[0.06]"
@@ -1594,7 +1652,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 type="button"
                 onClick={() => handleCaseTransform("title", "Título")}
                 title="Todo el bloc en Formato Título (Primera Letra Mayúscula)"
-                className={`px-1.5 sm:px-2 py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
+                className={`px-1.5 sm:px-2 py-2.5 sm:py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-0.5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
                   activeCaseMode === "title"
                     ? "bg-[#FF9F0A] text-black shadow-sm"
                     : "text-gray-300 hover:text-white hover:bg-white/[0.06]"
@@ -1608,7 +1666,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 type="button"
                 onClick={() => handleCaseTransform("sentence", "Oración")}
                 title="Todo el bloc en Formato Oración (Mayúscula inicial)"
-                className={`px-1.5 sm:px-2 py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-1 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
+                className={`px-1.5 sm:px-2 py-2.5 sm:py-1 rounded-[calc(0.75rem-2px)] text-[10px] sm:text-[11px] font-bold flex items-center gap-1 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.95] cursor-pointer ${
                   activeCaseMode === "sentence"
                     ? "bg-[#FF9F0A] text-black shadow-sm"
                     : "text-gray-300 hover:text-white hover:bg-white/[0.06]"
@@ -1625,15 +1683,15 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                 <button
                   onClick={() => setFontSize(Math.max(12, fontSize - 1))}
                   title="Reducir fuente"
-                  className="p-1 text-gray-400 hover:text-white"
+                  className="px-1.5 py-2.5 sm:p-1 text-gray-400 hover:text-white"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
                 </button>
-                <span className="px-1 sm:px-1.5 font-mono-code text-[10px] text-gray-400 tabular-nums">{fontSize}px</span>
+                <span className="hidden min-[400px]:inline px-1 sm:px-1.5 font-mono-code text-[10px] text-gray-400 tabular-nums">{fontSize}px</span>
                 <button
                   onClick={() => setFontSize(Math.min(24, fontSize + 1))}
                   title="Aumentar fuente"
-                  className="p-1 text-gray-400 hover:text-white"
+                  className="px-1.5 py-2.5 sm:p-1 text-gray-400 hover:text-white"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
                 </button>
@@ -1643,7 +1701,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
               <button
                 onClick={() => setShowLineNumbers(!showLineNumbers)}
                 title={showLineNumbers ? "Ocultar números de línea" : "Mostrar números de línea"}
-                className={`p-1.5 rounded-lg border text-xs transition-colors ${
+                className={`p-2.5 sm:p-1.5 rounded-lg border text-xs transition-colors ${
                   showLineNumbers
                     ? "bg-white/[0.08] text-white border-white/[0.15]"
                     : "text-gray-500 border-transparent hover:bg-white/[0.05]"
@@ -1659,7 +1717,7 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
                     type="button"
                     onClick={() => setShowToolsMenu(!showToolsMenu)}
                     title="Utilidades de limpieza rápida"
-                    className={`px-2 py-1 rounded-[calc(0.75rem-2px)] text-[11px] font-bold tracking-tight flex items-center gap-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] ${
+                    className={`px-2 py-2.5 sm:py-1 rounded-[calc(0.75rem-2px)] text-[11px] font-bold tracking-tight flex items-center gap-1 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] cursor-pointer shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] ${
                       showToolsMenu
                         ? "bg-[#FF9F0A] text-black"
                         : "bg-[#18181C] hover:bg-[#222228] text-gray-300 hover:text-white"
@@ -1787,7 +1845,11 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             </button>
             <h3 className="text-lg font-bold text-white mb-1.5 font-manrope">Compartir nota</h3>
             <p className="text-xs text-gray-400 mb-5 leading-relaxed">
-              Cualquiera que tenga este enlace podrá ver y editar la nota.
+              {readOnlyNote
+                ? "Cualquiera con este enlace podrá leer la nota, pero solo quien tenga la clave podrá editarla."
+                : unlockedPassword
+                  ? "Quien abra este enlace necesitará la clave para ver la nota."
+                  : "Cualquiera que tenga este enlace podrá ver y editar la nota."}
             </p>
 
             <div className="space-y-4">
@@ -1848,10 +1910,35 @@ export default function Editor({ unlockPrice = 500, onStatusChange }) {
             </div>
             <h3 className="text-lg font-bold text-white mb-1.5 font-manrope">Proteger con Contraseña</h3>
             <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-              Configura una contraseña para restringir el acceso a esta nota.
+              Elige qué protege la contraseña de esta nota.
             </p>
 
             <div className="space-y-3">
+              <div role="radiogroup" aria-label="Tipo de protección" className="grid grid-cols-1 gap-2">
+                {[
+                  { value: "private", icon: EyeOff, title: "Privada", desc: "Se pide la clave para ver y editar." },
+                  { value: "readonly", icon: Eye, title: "Solo lectura", desc: "Todos pueden leerla; la clave solo se pide para editar." },
+                ].map(({ value, icon: Icon, title, desc }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={lockMode === value}
+                    onClick={() => setLockMode(value)}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl border flex items-start gap-2.5 transition-colors ${
+                      lockMode === value
+                        ? "bg-[#FF9F0A]/10 border-[#FF9F0A]/50"
+                        : "bg-[#0E0E11] border-white/[0.08] hover:border-white/[0.16]"
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${lockMode === value ? "text-[#FF9F0A]" : "text-gray-500"}`} />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-white">{title}</span>
+                      <span className="block text-[11px] text-gray-400 leading-snug">{desc}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
               <input 
                 type="password"
                 placeholder="Nueva contraseña..."

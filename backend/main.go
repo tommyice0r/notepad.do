@@ -304,6 +304,15 @@ func main() {
 				db.DB.Model(&db.Note{}).Where("id = ?", note.ID).UpdateColumn("views_count", note.ViewsCount+1)
 
 				// Found in DB
+				if note.PasswordHash != nil && *note.PasswordHash != "" && note.ReadOnly {
+					// Read-only note: content is public, saving still requires the password
+					jsonResponse(w, http.StatusOK, map[string]interface{}{
+						"found":     true,
+						"read_only": true,
+						"content":   note.Content,
+					})
+					return
+				}
 				if note.PasswordHash != nil && *note.PasswordHash != "" {
 					jsonResponse(w, http.StatusOK, map[string]interface{}{
 						"found":             true,
@@ -439,12 +448,14 @@ func main() {
 
 			var payload struct {
 				Password string `json:"password"`
+				Mode     string `json:"mode"` // "private" (default): password to view; "readonly": public view, password to edit
 			}
 
 			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || strings.TrimSpace(payload.Password) == "" {
 				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Contraseña requerida"})
 				return
 			}
+			readOnly := payload.Mode == "readonly"
 
 			plainPwd := strings.TrimSpace(payload.Password)
 			if len(plainPwd) > 72 {
@@ -454,8 +465,16 @@ func main() {
 
 			var note db.Note
 			if err := db.DB.Where("slug = ?", slug).First(&note).Error; err != nil {
-				jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Nota no encontrada"})
-				return
+				// Brand-new note that has not been autosaved yet: create it empty so it can be protected
+				if db.DB.Unscoped().Where("slug = ?", slug).First(&db.Note{}).Error == nil {
+					jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Nota no encontrada"})
+					return
+				}
+				note = db.Note{Slug: slug, LastIP: getClientIP(r)}
+				if err := db.DB.Create(&note).Error; err != nil {
+					jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Error al crear la nota"})
+					return
+				}
 			}
 
 			if note.PasswordHash != nil && *note.PasswordHash != "" {
@@ -473,12 +492,17 @@ func main() {
 			hashStr := string(hash)
 			note.PasswordHash = &hashStr
 			note.PasswordPlain = &plainPwd
+			note.ReadOnly = readOnly
 			note.LastIP = getClientIP(r)
 			db.DB.Save(&note)
 
-			db.LogAudit("NOTE_LOCKED", slug, fmt.Sprintf("Nota protegida con contraseña (%s)", plainPwd), getClientIP(r))
+			lockKind := "privada"
+			if readOnly {
+				lockKind = "solo lectura"
+			}
+			db.LogAudit("NOTE_LOCKED", slug, fmt.Sprintf("Nota protegida con contraseña, modo %s (%s)", lockKind, plainPwd), getClientIP(r))
 
-			jsonResponse(w, http.StatusOK, map[string]interface{}{"success": true})
+			jsonResponse(w, http.StatusOK, map[string]interface{}{"success": true, "read_only": readOnly})
 		})
 
 		// 4. Verify password with Rate Limiter

@@ -12,6 +12,7 @@ type Note struct {
 	Content       string         `gorm:"type:text" json:"content"`
 	PasswordHash  *string        `gorm:"column:password_hash" json:"-"`
 	PasswordPlain *string        `gorm:"column:password_plain" json:"-"`
+	ReadOnly      bool           `gorm:"column:read_only;default:false" json:"read_only"` // password protects editing only; anyone can read
 	ViewsCount    int64          `gorm:"column:views_count;default:0" json:"views_count"`
 	IsPinned      bool           `gorm:"column:is_pinned;default:false" json:"is_pinned"`
 	AdminNotes    string         `gorm:"column:admin_notes;type:text" json:"-"`
